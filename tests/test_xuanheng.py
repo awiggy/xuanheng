@@ -232,6 +232,20 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertIn('.affinity-loading[hidden]', theme)
         self.assertIn('.affinity-main{width:min(1160px', theme)
 
+    def test_night_visual_system_covers_bazi_history_and_profile_entry(self):
+        html = (Path(__file__).resolve().parents[1] / "index.html").read_text()
+        theme = (Path(__file__).resolve().parents[1] / "night-theme.css").read_text()
+        self.assertIn('class="question-history-rail"', html)
+        self.assertIn('id="question-history-backdrop"', html)
+        self.assertIn('aria-controls="question-history-drawer"', html)
+        self.assertIn('function setQuestionDrawer(open)', html)
+        self.assertIn('新增出生档案', html)
+        self.assertNotIn('Personal chart · Python engine', html)
+        self.assertIn('.timing-month-cell{border:1px solid var(--line)!important', theme)
+        self.assertIn('#app-page .insight:nth-child(3)', theme)
+        self.assertIn('.editor-page .editor-main{border:1px solid', theme)
+        self.assertIn('.affinity-empty a,.ziwei-empty a', theme)
+
 
 if __name__ == "__main__":
     unittest.main()

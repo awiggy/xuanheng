@@ -1087,8 +1087,8 @@
     </header>
     <main class="profile-main">
       <div class="profile-page-top">
-        <div class="profile-head"><p>USER DATA · LOCAL FIRST</p><h1>八字资料</h1><span>管理自己、家人或朋友的出生资料与命盘记录。</span></div>
-        <a class="home-primary" href="#/profile-edit" data-route="profile-edit" data-new-profile>＋ 新增资料</a>
+        <div class="profile-head"><p>PROFILE ARCHIVE · 本机保存</p><h1>出生档案</h1><span>管理自己、家人或朋友的出生资料与命盘记录。</span></div>
+        <a class="home-primary" href="#/profile-edit" data-route="profile-edit" data-new-profile>＋ 新增出生档案</a>
       </div>
       <div class="profile-toolbar"><label><span>⌕</span><input id="profile-search" type="search" placeholder="搜索名称、地点或四柱…" /></label><div><span><b id="profile-history-count">0</b> 条记录 · 自动去重</span><button type="button" data-open-api>API 配置</button></div></div>
       <section class="profile-history-section"><div><span>SAVED CHARTS</span><h2>我的命盘</h2></div><div class="profile-history-list" id="profile-history-list"><p>暂无记录。</p></div></section>
@@ -1103,13 +1103,13 @@
       <span class="page-location">用户资料</span>
     </header>
     <main class="editor-main">
-      <div class="editor-heading"><div><p>NEW CHART · 新建八字</p><h1>建立一份八字资料</h1><span>阳历、阴历与四柱均由同一排盘引擎换算。</span></div><a class="editor-close" href="#/profile" data-route="profile" aria-label="关闭新建资料">×</a></div>
+      <div class="editor-heading"><div><p>NEW PROFILE · 出生档案</p><h1>新增出生档案</h1><span>阳历、阴历与四柱均由同一排盘引擎换算。</span></div><a class="editor-close" href="#/profile" data-route="profile" aria-label="关闭新增出生档案">×</a></div>
       <form id="bazi-form" class="profile-editor-form">
         <div class="editor-calendar-tabs">
           <div class="segment" id="calendar-segment">
-            <button type="button" class="selected" data-value="solar">☀︎ 阳历</button>
-            <button type="button" data-value="lunar">☾ 阴历</button>
-            <button type="button" data-value="pillars">田 四柱</button>
+            <button type="button" class="selected" data-value="solar">阳历</button>
+            <button type="button" data-value="lunar">阴历</button>
+            <button type="button" data-value="pillars">四柱</button>
           </div>
         </div>
         <div class="profile-editor-grid">
@@ -1233,6 +1233,7 @@
 
   <section class="site-page function-page" id="question-page" data-page="question" aria-hidden="true">
     <header class="site-header internal-header"><a class="brand brand-home" href="#/home" data-route="home" aria-label="返回玄衡主页"><span class="seal">玄</span><span><strong>玄衡</strong><small>返回主页</small></span></a><nav class="feature-nav"><a href="#/chart" data-route="chart">命盘研判</a><a href="#/timing" data-route="timing">岁运时间轴</a><a href="#/question" data-route="question">问一件事</a><a href="#/affinity" data-route="affinity">合缘</a></nav><a class="profile-link" href="#/profile" data-route="profile">我的档案 ↗</a></header>
+    <button class="question-history-rail" id="question-history-toggle" type="button" aria-label="展开历史问事" aria-controls="question-history-drawer" aria-expanded="false" title="历史问事"><span aria-hidden="true"><i></i><i></i><i></i></span></button>
     <main class="function-main question-main-page">
       <section class="route-empty" data-needs-chart><h2>请先选择一张命盘</h2><p>问事研判需要结合当前命盘与岁运。</p><a href="#/profile" data-route="profile">前往用户档案 →</a></section>
       <section class="route-content question-workspace" data-has-chart>
@@ -1241,7 +1242,6 @@
           <h1 id="question-profile-name">未命名资料</h1>
           <div class="question-divider"><span>✦</span></div>
           <p>慢慢来，玄衡会陪你整理问题</p>
-          <button class="night-outline" id="question-history-toggle" type="button">历史问事</button>
         </div>
         <div class="question-modes" aria-label="研判方式"><button type="button" data-question-mode="chance">◈ 随缘</button><button type="button" data-question-mode="luck">∞ 看运</button><button type="button" data-question-mode="listen">♧ 倾听</button><button type="button" class="active" data-question-mode="question">◉ 问事</button></div>
         <div class="question-box question-console"><textarea id="question-input" aria-label="输入想推演的问题" placeholder="心有所问，玄衡为答…"></textarea><button class="ask-button" id="ask-button" type="button">开始推演</button><small id="question-helper">结合当前命盘、大运与流年进行研判</small></div>
@@ -1256,8 +1256,9 @@
         </div>
       </section>
     </main>
-    <aside class="history-drawer" id="question-history-drawer" aria-hidden="true">
-      <div class="history-drawer-head"><div><small>QUESTION ARCHIVE</small><h2>历史问事</h2></div><button id="question-history-close" type="button" aria-label="关闭">×</button></div>
+    <button class="history-drawer-backdrop" id="question-history-backdrop" type="button" aria-label="关闭历史问事" hidden></button>
+    <aside class="history-drawer" id="question-history-drawer" role="dialog" aria-modal="true" aria-labelledby="question-history-title" aria-hidden="true">
+      <div class="history-drawer-head"><div><small>QUESTION ARCHIVE</small><h2 id="question-history-title">历史问事</h2></div><button id="question-history-close" type="button" aria-label="关闭">×</button></div>
       <p>重新打开会读取同一份保存结果，不会再次调用模型。</p>
       <div class="history-drawer-list" id="question-history-list"><span>暂无历史问事。</span></div>
     </aside>
@@ -1419,7 +1420,7 @@
           <div class="results" id="results" aria-live="polite">
             <div class="result-head">
               <div>
-                <p class="eyebrow">Personal chart · Python engine</p>
+                <p class="eyebrow">PERSONAL CHART · 确定排盘</p>
                 <h2><span id="report-name">你的</span>命理研习报告</h2>
                 <p id="report-meta">1990年05月15日 12:00 · 男 · 北京市</p>
               </div>
@@ -1471,7 +1472,7 @@
           </div>
         </section>
       </div>
-      <footer><span>玄衡 BAZI STUDY · 交互前端原型</span><span>传统文化研习参考，不构成医疗、财务或人生决策建议</span></footer>
+      <footer><span>玄衡 · 四柱研习</span><span>传统文化研习参考，不构成医疗、财务或人生决策建议</span></footer>
     </main>
   </div>
 
@@ -2979,19 +2980,28 @@
       renderQuestionMode();
       displayQuestionResult(payload.item.result, payload.item.intent, {recordId:payload.item.id, createdAt:payload.item.createdAt});
       trackAcceptance("question_history_opened", "success", {cached:true,intent:payload.item.intent});
-      document.getElementById("question-history-drawer").classList.remove("open");
-      document.getElementById("question-history-drawer").setAttribute("aria-hidden", "true");
+      setQuestionDrawer(false);
     }
 
     const questionDrawer = document.getElementById("question-history-drawer");
-    document.getElementById("question-history-toggle").addEventListener("click", () => {
-      questionDrawer.classList.add("open");
-      questionDrawer.setAttribute("aria-hidden", "false");
-      loadQuestionHistory();
-    });
-    document.getElementById("question-history-close").addEventListener("click", () => {
-      questionDrawer.classList.remove("open");
-      questionDrawer.setAttribute("aria-hidden", "true");
+    const questionDrawerToggle = document.getElementById("question-history-toggle");
+    const questionDrawerBackdrop = document.getElementById("question-history-backdrop");
+    function setQuestionDrawer(open) {
+      questionDrawer.classList.toggle("open", open);
+      questionDrawer.setAttribute("aria-hidden", String(!open));
+      questionDrawerToggle.setAttribute("aria-expanded", String(open));
+      questionDrawerBackdrop.hidden = !open;
+      document.body.classList.toggle("question-history-open", open);
+      if (open) {
+        loadQuestionHistory();
+        document.getElementById("question-history-close").focus();
+      }
+    }
+    questionDrawerToggle.addEventListener("click", () => setQuestionDrawer(true));
+    document.getElementById("question-history-close").addEventListener("click", () => setQuestionDrawer(false));
+    questionDrawerBackdrop.addEventListener("click", () => setQuestionDrawer(false));
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && questionDrawer.classList.contains("open")) setQuestionDrawer(false);
     });
     document.getElementById("question-history-list").addEventListener("click", async event => {
       const open = event.target.closest("[data-question-open]");
