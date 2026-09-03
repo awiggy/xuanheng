@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 import server
+import affinity_engine
 import tarot_engine
 import ziwei_engine
 
@@ -158,6 +159,78 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertIn('#app-page.shell{width:100%;min-height:100vh;margin:0;grid-template-rows:auto minmax(0,1fr);overflow:visible;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}', theme)
         self.assertIn('.home-coordinate b{color:rgba(210,173,104,.42);font-size:44px}', theme)
         self.assertIn('.home-launch{margin-top:72px;padding:42px', theme)
+
+    def test_affinity_engine_is_deterministic_and_evidence_based(self):
+        first = {"id": "first", "name": "甲", "pillars": "壬午/丙午/甲寅/己巳"}
+        second = {"id": "second", "name": "乙", "pillars": "甲申/己巳/丁未/丙午"}
+        result = affinity_engine.calculate_affinity(first, second, "亲密关系")
+        repeated = affinity_engine.calculate_affinity(first, second, "亲密关系")
+        self.assertEqual(result, repeated)
+        self.assertEqual(len(result["comparisons"]), 4)
+        self.assertEqual(len(result["dimensions"]), 4)
+        self.assertGreaterEqual(result["score"], 35)
+        self.assertLessEqual(result["score"], 92)
+        self.assertIn("不代表现实关系", result["summary"])
+        self.assertNotIn("注定", result["summary"])
+        cooperation = affinity_engine.calculate_affinity(first, second, "合作关系")
+        self.assertEqual(cooperation["score"], result["score"])
+        self.assertNotEqual(
+            server.local_affinity_interpretation(cooperation)["action"],
+            server.local_affinity_interpretation(result)["action"],
+        )
+
+    def test_affinity_history_is_cached_reopenable_and_exportable(self):
+        now = "2026-09-03T12:00:00"
+        profiles = (
+            ("1" * 20, "a" * 64, "甲", "女", "壬午/丙午/甲寅/己巳"),
+            ("2" * 20, "b" * 64, "乙", "男", "甲申/己巳/丁未/丙午"),
+        )
+        with server.state_connection() as connection:
+            for record_id, fingerprint, name, sex, pillars in profiles:
+                connection.execute(
+                    """INSERT INTO chart_history(
+                        id, fingerprint, name, sex, calendar, birth_date, birth_time,
+                        accuracy, place, leap, time_mode, timezone_offset, timezone_label,
+                        longitude, latitude, pillars, dayun_direction, dayun_start, created_at, updated_at
+                    ) VALUES(?, ?, ?, ?, 'solar', '2000-01-01', '12:00', '时间准确', '', 0,
+                             'standard', 8, '北京（UTC+8）', '', '', ?, '顺排', '3岁', ?, ?)""",
+                    (record_id, fingerprint, name, sex, pillars, now, now),
+                )
+        payload = {"profileAId": "1" * 20, "profileBId": "2" * 20, "relationship": "亲密关系"}
+        item, cached = server.save_affinity_reading(payload)
+        self.assertFalse(cached)
+        reopened, cached = server.save_affinity_reading(payload)
+        self.assertTrue(cached)
+        self.assertEqual(reopened["id"], item["id"])
+        with server.API_CONFIG_LOCK:
+            original = dict(server.API_CONFIG)
+            server.API_CONFIG.clear()
+        try:
+            interpretation, interpretation_cached = server.analyze_affinity_record(item["id"])
+            self.assertFalse(interpretation_cached)
+            self.assertEqual(interpretation["source"], "local")
+            same, interpretation_cached = server.analyze_affinity_record(item["id"])
+            self.assertTrue(interpretation_cached)
+            self.assertEqual(same, interpretation)
+        finally:
+            with server.API_CONFIG_LOCK:
+                server.API_CONFIG.clear()
+                server.API_CONFIG.update(original)
+        self.assertIn("玄衡合缘记录", server.affinity_markdown(server.get_affinity_reading(item["id"])))
+        self.assertEqual(len(server.list_affinity_readings()), 1)
+        with self.assertRaisesRegex(ValueError, "两份不同"):
+            server.save_affinity_reading({"profileAId": "1" * 20, "profileBId": "1" * 20})
+
+    def test_affinity_frontend_entry_is_enabled(self):
+        html = (Path(__file__).resolve().parents[1] / "index.html").read_text()
+        theme = (Path(__file__).resolve().parents[1] / "night-theme.css").read_text()
+        self.assertIn('id="affinity-page"', html)
+        self.assertIn('/api/affinity/calculate', html)
+        self.assertIn('/api/affinity/history', html)
+        self.assertIn('data-route="affinity">合缘</a>', html)
+        self.assertNotIn('合缘 <em>待开放</em>', html)
+        self.assertIn('.affinity-loading[hidden]', theme)
+        self.assertIn('.affinity-main{width:min(1160px', theme)
 
 
 if __name__ == "__main__":

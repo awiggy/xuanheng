@@ -39,3 +39,6 @@ next-env.d.ts
 
 # local runtime state (may contain user profiles and generated readings)
 /.xuanheng/
+
+# research-only upstream without a confirmed redistribution license
+/vendor/yinyuan-skills/

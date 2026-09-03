@@ -30,6 +30,7 @@ from typing import Any
 
 import tarot_engine
 import ziwei_engine
+import affinity_engine
 
 
 ROOT = Path(__file__).resolve().parent
@@ -49,6 +50,7 @@ KEYCHAIN_SERVICE = "com.xuanheng.bazi.analysis-api"
 KEYCHAIN_ACCOUNT = getpass.getuser()
 ANALYSIS_PROMPT_VERSION = "2026-09-03-history-v3"
 TAROT_PROMPT_VERSION = "2026-09-03-tarot-v1"
+AFFINITY_PROMPT_VERSION = "2026-09-03-affinity-v1"
 ANALYSIS_REFERENCE_FILES = (
     ROOT / "vendor" / "bazi-skill" / "references" / "classical-texts.md",
     ROOT / "vendor" / "bazi-skill" / "references" / "wuxing-tables.md",
@@ -103,13 +105,16 @@ ACCEPTANCE_EVENT_DEFINITIONS: dict[str, dict[str, Any]] = {
     "ziwei_self_check_passed": {"title": "紫微排盘结构自检通过", "category": "紫微斗数", "weight": 5, "required": True},
     "ziwei_palace_viewed": {"title": "查看紫微宫位与三方四正", "category": "紫微斗数", "weight": 2, "required": True},
     "ziwei_timing_viewed": {"title": "切换紫微流年与三层四化", "category": "紫微斗数", "weight": 3, "required": True},
+    "affinity_completed": {"title": "完成一次双档案合缘计算", "category": "合缘", "weight": 5, "required": True},
+    "affinity_history_opened": {"title": "重新打开合缘结果", "category": "合缘", "weight": 3, "required": True},
+    "affinity_exported": {"title": "导出合缘结果", "category": "合缘", "weight": 2, "required": True},
 }
 
 ACCEPTANCE_DETAIL_KEYS = {
     "source", "calendar", "mode", "outcome", "method", "errorCode",
     "candidateCount", "cached", "historyAction", "hasCoordinates",
     "timezoneOffset", "route", "yearCount", "monthCount", "expanded", "hasCurrent", "intent",
-    "system", "palaceCount", "starCount", "transformCount", "rulesVersion", "branch", "layerCount",
+    "system", "palaceCount", "starCount", "transformCount", "rulesVersion", "branch", "layerCount", "relationship",
 }
 
 
@@ -246,6 +251,27 @@ def initialize_state() -> None:
             """
             CREATE INDEX IF NOT EXISTS idx_ziwei_chart_profile_updated
             ON ziwei_chart_cache(profile_id, updated_at DESC)
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS affinity_readings (
+                id TEXT PRIMARY KEY,
+                cache_key TEXT NOT NULL UNIQUE,
+                profile_a_id TEXT NOT NULL,
+                profile_b_id TEXT NOT NULL,
+                relationship TEXT NOT NULL,
+                result TEXT NOT NULL,
+                interpretation TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_affinity_readings_updated
+            ON affinity_readings(updated_at DESC)
             """
         )
         connection.execute(
@@ -423,8 +449,10 @@ def save_chart_history(payload: dict[str, Any], chart: dict[str, Any]) -> tuple[
             ).fetchone()
             if duplicate:
                 connection.execute("DELETE FROM ziwei_chart_cache WHERE profile_id=?", (duplicate["id"],))
+                connection.execute("DELETE FROM affinity_readings WHERE profile_a_id=? OR profile_b_id=?", (duplicate["id"], duplicate["id"]))
                 connection.execute("DELETE FROM chart_history WHERE id=?", (duplicate["id"],))
             connection.execute("DELETE FROM ziwei_chart_cache WHERE profile_id=?", (requested_id,))
+            connection.execute("DELETE FROM affinity_readings WHERE profile_a_id=? OR profile_b_id=?", (requested_id, requested_id))
             connection.execute(
                 """
                 UPDATE chart_history SET
@@ -663,6 +691,7 @@ def calculate_ziwei_cached(payload: dict[str, Any]) -> tuple[dict[str, Any], boo
 def delete_chart_history(record_id: str) -> bool:
     with state_connection() as connection:
         connection.execute("DELETE FROM ziwei_chart_cache WHERE profile_id=?", (record_id,))
+        connection.execute("DELETE FROM affinity_readings WHERE profile_a_id=? OR profile_b_id=?", (record_id, record_id))
         cursor = connection.execute("DELETE FROM chart_history WHERE id=?", (record_id,))
     return cursor.rowcount > 0
 
@@ -870,6 +899,210 @@ def tarot_markdown(item: dict[str, Any]) -> str:
     for card in result.get("cards", []):
         lines.extend(["", f"### {card.get('position', '')} · {card.get('card', '')}{card.get('orientation', '')}", "", str(card.get("interpretation", ""))])
     lines.extend(["", "## 行动", "", str(result.get("action", "")), "", "---", str(result.get("disclaimer", ""))])
+    return "\n".join(lines) + "\n"
+
+
+def save_affinity_reading(payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    profile_a_id = str(payload.get("profileAId", "")).strip()[:40]
+    profile_b_id = str(payload.get("profileBId", "")).strip()[:40]
+    relationship = str(payload.get("relationship", "亲密关系")).strip()[:20]
+    if not profile_a_id or not profile_b_id:
+        raise ValueError("请选择两份出生档案")
+    if profile_a_id == profile_b_id:
+        raise ValueError("合缘需要选择两份不同的出生档案")
+    first = get_chart_history_record(profile_a_id)
+    second = get_chart_history_record(profile_b_id)
+    if first is None or second is None:
+        raise ValueError("所选出生档案不存在，请重新选择")
+    result = affinity_engine.calculate_affinity(first, second, relationship)
+    identity = {
+        "profileAId": profile_a_id, "profileBId": profile_b_id,
+        "relationship": result["relationship"], "rulesetVersion": affinity_engine.RULESET_VERSION,
+        "pillarsA": first["pillars"], "pillarsB": second["pillars"],
+    }
+    cache_key = hashlib.sha256(json.dumps(identity, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    record_id = "a_" + cache_key[:20]
+    now = datetime.now().isoformat(timespec="seconds")
+    with state_connection() as connection:
+        existed = connection.execute("SELECT 1 FROM affinity_readings WHERE cache_key=?", (cache_key,)).fetchone() is not None
+        connection.execute(
+            """
+            INSERT INTO affinity_readings(
+                id, cache_key, profile_a_id, profile_b_id, relationship,
+                result, interpretation, created_at, updated_at
+            ) VALUES(?, ?, ?, ?, ?, ?, '{}', ?, ?)
+            ON CONFLICT(cache_key) DO UPDATE SET updated_at=excluded.updated_at
+            """,
+            (record_id, cache_key, profile_a_id, profile_b_id, result["relationship"], json.dumps(result, ensure_ascii=False), now, now),
+        )
+        connection.execute(
+            """
+            DELETE FROM affinity_readings WHERE id IN (
+                SELECT id FROM affinity_readings ORDER BY updated_at DESC LIMIT -1 OFFSET 100
+            )
+            """
+        )
+    item = get_affinity_reading(record_id)
+    if item is None:
+        raise ValueError("合缘结果保存失败")
+    return item, existed
+
+
+def list_affinity_readings() -> list[dict[str, Any]]:
+    with state_connection() as connection:
+        rows = connection.execute(
+            """SELECT id, relationship, result, interpretation, created_at, updated_at
+               FROM affinity_readings ORDER BY updated_at DESC LIMIT 100"""
+        ).fetchall()
+    items: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            result = json.loads(row["result"])
+            interpretation = json.loads(row["interpretation"])
+        except json.JSONDecodeError:
+            continue
+        profiles = result.get("profiles", [])
+        items.append({
+            "id": row["id"], "relationship": row["relationship"],
+            "profileNames": [profile.get("name", "未命名资料") for profile in profiles[:2] if isinstance(profile, dict)],
+            "score": result.get("score"), "label": result.get("label"),
+            "title": interpretation.get("title") or "关系结构报告",
+            "createdAt": row["created_at"], "updatedAt": row["updated_at"],
+        })
+    return items
+
+
+def get_affinity_reading(record_id: str) -> dict[str, Any] | None:
+    with state_connection() as connection:
+        row = connection.execute(
+            """SELECT id, profile_a_id, profile_b_id, relationship, result, interpretation, created_at, updated_at
+               FROM affinity_readings WHERE id=?""",
+            (record_id[:40],),
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        result = json.loads(row["result"])
+        interpretation = json.loads(row["interpretation"])
+    except json.JSONDecodeError:
+        return None
+    return {
+        "id": row["id"], "profileAId": row["profile_a_id"], "profileBId": row["profile_b_id"],
+        "relationship": row["relationship"], "result": result, "interpretation": interpretation,
+        "createdAt": row["created_at"], "updatedAt": row["updated_at"],
+    }
+
+
+def update_affinity_interpretation(record_id: str, interpretation: dict[str, Any]) -> None:
+    with state_connection() as connection:
+        connection.execute(
+            "UPDATE affinity_readings SET interpretation=?, updated_at=? WHERE id=?",
+            (json.dumps(interpretation, ensure_ascii=False), datetime.now().isoformat(timespec="seconds"), record_id[:40]),
+        )
+
+
+def delete_affinity_reading(record_id: str) -> bool:
+    with state_connection() as connection:
+        cursor = connection.execute("DELETE FROM affinity_readings WHERE id=?", (record_id[:40],))
+    return cursor.rowcount > 0
+
+
+def local_affinity_interpretation(result: dict[str, Any]) -> dict[str, Any]:
+    relationship = result.get("relationship", "亲密关系")
+    context = {
+        "亲密关系": {
+            "title": "亲密关系里，先看呼应，也看边界",
+            "action": "各自写下一件希望对方继续做的事，以及一件需要先征得同意的事；交换后只确认理解，不立即争辩。",
+        },
+        "相处磨合": {
+            "title": "把差异翻译成可以协商的相处规则",
+            "action": "选一个最近反复出现的摩擦场景，分别说清触发点、真实需要和可接受的下一步，再共同约定一条可执行规则。",
+        },
+        "合作关系": {
+            "title": "合作中，用互补分工承接节奏差异",
+            "action": "选一项共同任务，明确一人负责推进、一人负责复核，并约定交付标准和出现分歧时由谁拍板。",
+        },
+    }.get(relationship, {})
+    return {
+        "source": "local",
+        "title": context.get("title") or f"{result.get('label', '关系结构')}：先看呼应，也看磨合",
+        "summary": result.get("summary", ""),
+        "strengths": result.get("strengths", [])[:3],
+        "frictions": result.get("frictions", [])[:3],
+        "action": context.get("action") or result.get("action", ""),
+        "disclaimer": result.get("disclaimer", ""),
+    }
+
+
+def analyze_affinity_record(record_id: str) -> tuple[dict[str, Any], bool]:
+    item = get_affinity_reading(record_id)
+    if item is None:
+        raise ValueError("找不到这次合缘记录")
+    existing = item.get("interpretation")
+    if isinstance(existing, dict) and existing.get("title"):
+        return existing, True
+    result = item["result"]
+    fallback = local_affinity_interpretation(result)
+    with API_CONFIG_LOCK:
+        configured = bool(API_CONFIG.get("apiKey"))
+    if not configured:
+        update_affinity_interpretation(record_id, fallback)
+        return fallback, False
+
+    compact = {
+        "relationship": result.get("relationship"), "score": result.get("score"), "label": result.get("label"),
+        "dimensions": result.get("dimensions"), "comparisons": result.get("comparisons"),
+        "zodiac": result.get("zodiac"), "complement": result.get("complement"),
+    }
+    messages = [
+        {
+            "role": "system",
+            "content": "你是玄衡的关系观察助手。只解释给出的确定性干支与五行证据，不修改分数，不预测感情结局，不制造焦虑，不使用宿命式语言。把合冲翻译成可观察的互动模式和具体沟通动作。只返回合法 JSON。",
+        },
+        {
+            "role": "user",
+            "content": f"""版本：{AFFINITY_PROMPT_VERSION}
+确定性合缘数据：{json.dumps(compact, ensure_ascii=False)}
+输出根字段必须且只能是 title、summary、strengths、frictions、action、disclaimer。
+strengths 与 frictions 各 2—3 条，必须能对应输入证据；action 给出一个双方一周内可实践的沟通动作。不得声称天作之合、有缘无分、注定或不适合在一起。""",
+        },
+    ]
+    try:
+        raw = request_completion(messages)
+        result_text = {
+            "source": "model",
+            "title": first_text(raw, "title", "标题") or fallback["title"],
+            "summary": first_text(raw, "summary", "概览", "综合") or fallback["summary"],
+            "strengths": [str(value)[:240] for value in first_list(raw, "strengths", "呼应", "优势")[:3]] or fallback["strengths"],
+            "frictions": [str(value)[:240] for value in first_list(raw, "frictions", "磨合", "提醒")[:3]] or fallback["frictions"],
+            "action": first_text(raw, "action", "行动", "建议") or fallback["action"],
+            "disclaimer": first_text(raw, "disclaimer", "提示") or fallback["disclaimer"],
+        }
+    except ValueError as exc:
+        print(f"[affinity] model fallback reason={type(exc).__name__}", flush=True)
+        result_text = {**fallback, "fallbackReason": "模型暂不可用，已使用确定性证据生成基础说明"}
+    update_affinity_interpretation(record_id, result_text)
+    return result_text, False
+
+
+def affinity_markdown(item: dict[str, Any]) -> str:
+    result = item.get("result", {})
+    interpretation = item.get("interpretation") or local_affinity_interpretation(result)
+    profiles = result.get("profiles", [])
+    names = [profile.get("name", "未命名资料") for profile in profiles[:2] if isinstance(profile, dict)]
+    lines = [
+        "# 玄衡合缘记录", "", f"- 双方：{' × '.join(names)}", f"- 观察场景：{item.get('relationship', '')}",
+        f"- 结构指数：{result.get('score', '')}/100（{result.get('label', '')}）", f"- 规则版本：{result.get('rulesetVersion', '')}",
+        "", f"## {interpretation.get('title', '关系结构报告')}", "", str(interpretation.get("summary", "")),
+        "", "## 四项结构", "",
+    ]
+    for dimension in result.get("dimensions", []):
+        lines.append(f"- **{dimension.get('label', '')}**：{dimension.get('score', '')}/100")
+    lines.extend(["", "## 可利用的呼应", ""])
+    lines.extend(f"- {value}" for value in interpretation.get("strengths", []))
+    lines.extend(["", "## 需要协商的摩擦", ""])
+    lines.extend(f"- {value}" for value in interpretation.get("frictions", []))
+    lines.extend(["", "## 可执行动作", "", str(interpretation.get("action", "")), "", "---", str(interpretation.get("disclaimer", ""))])
     return "\n".join(lines) + "\n"
 
 
@@ -2308,6 +2541,30 @@ class Handler(SimpleHTTPRequestHandler):
             else:
                 self.send_text(HTTPStatus.OK, tarot_markdown(item), f"xuanheng-tarot-{record_id}.md")
             return
+        if path == "/api/affinity/status":
+            self.send_json(
+                HTTPStatus.OK,
+                {"ok": True, "available": True, "version": "V4.0 RC", "rulesetVersion": affinity_engine.RULESET_VERSION,
+                 "source": "Ming-H/yinyuan-skills", "capabilities": ["双档案", "四柱同位", "天干五合", "地支合冲刑害", "生肖关系", "五行互补", "历史导出"]},
+            )
+            return
+        if path == "/api/affinity/history":
+            query = urllib.parse.parse_qs(parsed.query)
+            record_id = query.get("id", [""])[0]
+            if record_id:
+                item = get_affinity_reading(record_id)
+                self.send_json(HTTPStatus.OK if item else HTTPStatus.NOT_FOUND, {"ok": bool(item), "item": item, "error": None if item else "记录不存在"})
+            else:
+                self.send_json(HTTPStatus.OK, {"ok": True, "items": list_affinity_readings()})
+            return
+        if path == "/api/affinity/export":
+            record_id = urllib.parse.parse_qs(parsed.query).get("id", [""])[0]
+            item = get_affinity_reading(record_id)
+            if item is None:
+                self.send_json(HTTPStatus.NOT_FOUND, {"ok": False, "error": "记录不存在"})
+            else:
+                self.send_text(HTTPStatus.OK, affinity_markdown(item), f"xuanheng-affinity-{record_id}.md")
+            return
         if path == "/api/ziwei/status":
             self.send_json(
                 HTTPStatus.OK,
@@ -2352,6 +2609,10 @@ class Handler(SimpleHTTPRequestHandler):
             record_id = urllib.parse.parse_qs(parsed.query).get("id", [""])[0]
             self.send_json(HTTPStatus.OK, {"ok": True, "deleted": delete_tarot_reading(record_id)})
             return
+        if parsed.path == "/api/affinity/history":
+            record_id = urllib.parse.parse_qs(parsed.query).get("id", [""])[0]
+            self.send_json(HTTPStatus.OK, {"ok": True, "deleted": delete_affinity_reading(record_id)})
+            return
         self.send_json(HTTPStatus.NOT_FOUND, {"error": "接口不存在"})
 
     def do_POST(self) -> None:  # noqa: N802
@@ -2360,7 +2621,7 @@ class Handler(SimpleHTTPRequestHandler):
             "/api/chart", "/api/geocode", "/api/settings", "/api/analyze",
             "/api/calendar-convert", "/api/calendar-options", "/api/pillar-dates",
             "/api/acceptance-event", "/api/timing-data", "/api/tarot/draw", "/api/tarot/interpret",
-            "/api/ziwei/chart", "/api/ziwei/timing",
+            "/api/ziwei/chart", "/api/ziwei/timing", "/api/affinity/calculate", "/api/affinity/interpret",
         }:
             self.send_json(HTTPStatus.NOT_FOUND, {"error": "接口不存在"})
             return
@@ -2468,6 +2729,24 @@ class Handler(SimpleHTTPRequestHandler):
                 if not record_id:
                     raise ValueError("缺少塔罗占问 ID")
                 interpretation, cached = analyze_tarot_record(record_id)
+                self.send_json(HTTPStatus.OK, {"ok": True, "interpretation": interpretation, "cached": cached})
+                return
+
+            if path == "/api/affinity/calculate":
+                item, cached = save_affinity_reading(payload)
+                interpretation, interpretation_cached = analyze_affinity_record(item["id"])
+                refreshed = get_affinity_reading(item["id"])
+                self.send_json(
+                    HTTPStatus.OK,
+                    {"ok": True, "item": refreshed, "cached": cached, "interpretationCached": interpretation_cached, "interpretation": interpretation},
+                )
+                return
+
+            if path == "/api/affinity/interpret":
+                record_id = str(payload.get("id", ""))[:40]
+                if not record_id:
+                    raise ValueError("缺少合缘记录 ID")
+                interpretation, cached = analyze_affinity_record(record_id)
                 self.send_json(HTTPStatus.OK, {"ok": True, "interpretation": interpretation, "cached": cached})
                 return
 
