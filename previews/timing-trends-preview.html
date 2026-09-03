@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>玄衡 · 流年流月预览</title>
+  <style>
+    :root {
+      --ink:#17191d; --muted:#7f858f; --line:#dfe2e8; --paper:rgba(255,255,255,.86);
+      --lav:#e9e5ff; --lav-strong:#7568ee; --cyan:#e5f3f6; --sand:#f6ead7; --bg:#f2f4f8;
+      --shadow:0 22px 64px rgba(30,36,52,.09); --serif:"Songti SC","STSong",serif;
+      --sans:Inter,"PingFang SC","Microsoft YaHei",sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;color:var(--ink);font-family:var(--sans);background:
+      linear-gradient(rgba(109,117,150,.045) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(109,117,150,.045) 1px,transparent 1px),
+      radial-gradient(circle at 78% 10%,rgba(190,185,255,.25),transparent 34%),var(--bg);
+      background-size:56px 56px,56px 56px,auto,auto;min-height:100vh}
+    button{font:inherit;color:inherit}
+    .topbar{height:88px;margin:24px auto 0;max-width:1680px;padding:0 30px;border:1px solid rgba(255,255,255,.8);
+      border-radius:28px;background:rgba(255,255,255,.8);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+    .brand{display:flex;align-items:center;gap:14px}.seal{width:48px;height:48px;border-radius:14px;background:var(--ink);color:white;display:grid;place-items:center;font:32px/1 var(--serif)}
+    .brand strong{display:block;font:25px/1 var(--serif)}.brand small{display:block;margin-top:6px;color:#9a9fa8;letter-spacing:.16em;font-size:9px}
+    .nav{display:flex;gap:6px;padding:6px;border-radius:16px;background:#eef0f4}.nav span{padding:11px 18px;border-radius:12px;color:#777d87;font-size:13px}.nav .active{background:var(--ink);color:white}
+    .preview-label{font-size:11px;letter-spacing:.14em;color:var(--lav-strong)}
+    main{max-width:1680px;margin:80px auto;padding:0 64px 90px}
+    .heading{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:34px}
+    .eyebrow{font:700 11px/1 var(--sans);letter-spacing:.16em;color:var(--lav-strong)}
+    h1,h2,h3,p{margin:0}h1{font:76px/.95 var(--serif);margin:18px 0 16px}.heading p{color:var(--muted);font-size:16px}
+    .engine-note{max-width:460px;padding:18px 20px;border:1px solid #dcd8ff;border-radius:18px;background:rgba(240,238,255,.78);font-size:12px;line-height:1.7;color:#615c8d}
+    .panel{border:1px solid var(--line);border-radius:30px;background:var(--paper);box-shadow:var(--shadow);padding:36px 42px;margin-top:24px;overflow:hidden}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}
+    .panel-head small{display:block;color:#999fa9;font:700 10px/1 var(--sans);letter-spacing:.16em;margin-bottom:10px}.panel-head h2{font:38px/1 var(--serif)}
+    .outline{border:1px solid #cfd3db;background:white;border-radius:13px;padding:11px 16px;cursor:pointer;transition:.2s}.outline:hover{border-color:var(--lav-strong);color:var(--lav-strong)}
+    .luck-context{display:grid;grid-template-columns:190px 1fr auto;gap:22px;align-items:center;background:#f0f1f4;border-radius:20px;padding:20px 22px;margin-bottom:24px}
+    .luck-context strong{font:30px/1 var(--serif)}.luck-context span{display:block;color:var(--muted);font-size:12px;margin-top:7px}.luck-context p{font-size:13px;line-height:1.65;color:#5f6570}.luck-context i{font-style:normal;font-size:11px;color:#6a61df;background:white;border-radius:999px;padding:9px 13px}
+    .year-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.year-grid.expanded{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .year{min-height:170px;padding:20px;border:1px solid #e5e6ea;border-radius:20px;background:#f4f5f7;display:flex;flex-direction:column;transition:.2s}
+    .year:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(32,37,50,.08)}.year.current{background:var(--lav);border-color:#bdb5ff}
+    .year .top{display:flex;justify-content:space-between;color:#868c96;font-size:11px}.year strong{font:31px/1 var(--serif);margin:22px 0 14px}.year p{font-size:12px;line-height:1.6;color:#646a74}.year b{font-size:10px;color:#6e65df;font-weight:600}
+    .boundary{display:flex;gap:12px;align-items:center;padding:14px 17px;border:1px solid #dcd8ff;border-radius:16px;background:#f2f0ff;color:#625d8e;font-size:12px;margin-bottom:18px}.boundary strong{color:var(--ink)}
+    .month-groups{display:grid;gap:18px}.half{display:none}.half.visible{display:block}.half-title{display:flex;justify-content:space-between;align-items:center;margin:0 2px 12px}.half-title strong{font-size:13px}.half-title span{font-size:11px;color:#979ca6}
+    .month-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.month{min-height:190px;padding:17px 15px;border:1px solid #e5e6ea;border-radius:18px;background:#f7f7f8;position:relative}
+    .month.active{border-color:#b9b0ff;background:var(--lav)}.month .term{font-size:10px;color:#8b919a}.month strong{display:block;font:28px/1 var(--serif);margin:17px 0 10px}.month time{display:block;font-size:11px;line-height:1.55;color:#656b76}.month p{margin-top:17px;padding-top:12px;border-top:1px solid rgba(105,110,125,.13);font-size:11px;line-height:1.5;color:#777d87}.month .now{position:absolute;right:12px;top:12px;font-size:9px;color:white;background:var(--lav-strong);padding:5px 7px;border-radius:999px}
+    .legend{display:flex;gap:24px;margin-top:22px;padding-top:20px;border-top:1px solid var(--line);color:#858b95;font-size:11px;line-height:1.7}.legend b{color:var(--ink)}
+    .hidden{display:none!important}
+    @media(max-width:980px){.topbar{margin:12px}.nav{display:none}main{margin-top:46px;padding:0 18px 60px}h1{font-size:48px}.heading{display:block}.engine-note{margin-top:22px}.panel{padding:24px 18px}.luck-context{grid-template-columns:1fr}.year-grid,.year-grid.expanded{grid-template-columns:1fr 1fr}.month-grid{grid-template-columns:1fr 1fr}.panel-head{align-items:flex-start}.legend{display:block}.legend span{display:block;margin-bottom:8px}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="seal">玄</span><span><strong>玄衡</strong><small>BAZI OBSERVATORY</small></span></div>
+    <div class="nav"><span>命盘研判</span><span class="active">岁运时间轴</span><span>问一件事</span></div>
+    <span class="preview-label">INTERACTION PREVIEW · 暂未接入正式页面</span>
+  </header>
+  <main>
+    <section class="heading">
+      <div><span class="eyebrow">TIMING · 岁运</span><h1>流年与流月走势</h1><p>首页保持简洁，需要时再展开一个大运的十年与全年十二个流月。</p></div>
+      <aside class="engine-note"><b>计算边界</b><br>流年、流月干支与交接时刻由本地定气排盘引擎给出；流月按立春、惊蛰、清明等十二节换月，不按公历每月 1 日换月。</aside>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><small>ANNUAL VIEW · 流年</small><h2>今年、明年、后年</h2></div><button class="outline" id="toggle-years">展开癸卯大运十年 →</button></div>
+      <div class="luck-context"><div><strong>癸卯大运</strong><span>23–32 岁 · 2025–2034</span></div><p>大运作为十年环境；流年作为每年的引动。首页只展示 3 年，展开后查看本大运覆盖的完整十年。</p><i>示例盘面</i></div>
+      <div class="year-grid" id="year-grid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><small>MONTHLY VIEW · 流月</small><h2>当前半年 · 7—12 月</h2></div><button class="outline" id="toggle-months">展开上半年 1—6 月 →</button></div>
+      <div class="boundary"><strong>当前：丙申月</strong><span>2026-08-07 19:38 起，至 2026-09-07 22:40 止；9 月 7 日白露后才进入丁酉月。</span></div>
+      <div class="month-groups">
+        <div class="half" id="first-half"><div class="half-title"><strong>上半年</strong><span>立春月起 · 并非公历自然月</span></div><div class="month-grid" id="first-grid"></div></div>
+        <div class="half visible"><div class="half-title"><strong>当前展示 · 下半年</strong><span>小暑至次年小寒</span></div><div class="month-grid" id="second-grid"></div></div>
+      </div>
+      <div class="legend"><span><b>首页规则：</b>当前处在 1—6 月则先展示上半年；处在 7—12 月则先展示下半年。</span><span><b>展开规则：</b>只补出另半年，不改变当前月高亮。</span><span><b>解读规则：</b>走势文案必须同时参考原局、大运、流年与流月，不能只看月柱。</span></div>
+    </section>
+  </main>
+  <script>
+    const years = [
+      [2025,"乙巳"],[2026,"丙午"],[2027,"丁未"],[2028,"戊申"],[2029,"己酉"],
+      [2030,"庚戌"],[2031,"辛亥"],[2032,"壬子"],[2033,"癸丑"],[2034,"甲寅"]
+    ];
+    const firstHalf = [
+      ["小寒","己丑","01-05 16:17","02-04 03:54"],["立春","庚寅","02-04 03:54","03-05 21:48"],
+      ["惊蛰","辛卯","03-05 21:48","04-05 02:27"],["清明","壬辰","04-05 02:27","05-05 19:35"],
+      ["立夏","癸巳","05-05 19:35","06-05 23:36"],["芒种","甲午","06-05 23:36","07-07 09:48"]
+    ];
+    const secondHalf = [
+      ["小暑","乙未","07-07 09:48","08-07 19:38"],["立秋","丙申","08-07 19:38","09-07 22:40",true],
+      ["白露","丁酉","09-07 22:40","10-08 14:28"],["寒露","戊戌","10-08 14:28","11-07 17:49"],
+      ["立冬","己亥","11-07 17:49","12-07 10:48"],["大雪","庚子","12-07 10:48","2027-01-05"]
+    ];
+    const yearGrid = document.getElementById("year-grid");
+    const yearButton = document.getElementById("toggle-years");
+    let yearExpanded = false;
+    function renderYears(){
+      const visible = yearExpanded ? years : years.slice(1,4);
+      yearGrid.classList.toggle("expanded",yearExpanded);
+      yearGrid.innerHTML = visible.map(([year,pillar]) => `<article class="year ${year===2026?"current":""}"><div class="top"><span>${year===2026?"本年":year===2027?"明年":year===2028?"后年":"大运第 "+(year-2024)+" 年"}</span><span>${year}</span></div><strong>${pillar}</strong><p>待结合原局与癸卯大运生成年度走势。</p>${year===2026?"<b>当前流年</b>":""}</article>`).join("");
+      yearButton.textContent = yearExpanded ? "收起为首页三年 ←" : "展开癸卯大运十年 →";
+    }
+    function monthCards(items){return items.map(([term,pillar,start,end,current])=>`<article class="month ${current?"active":""}">${current?"<span class=\"now\">当前</span>":""}<span class="term">${term}换月</span><strong>${pillar}</strong><time>起 ${start}<br>止 ${end}</time><p>走势解读占位；正式版由命局与岁运共同生成。</p></article>`).join("")}
+    document.getElementById("first-grid").innerHTML=monthCards(firstHalf);
+    document.getElementById("second-grid").innerHTML=monthCards(secondHalf);
+    yearButton.addEventListener("click",()=>{yearExpanded=!yearExpanded;renderYears()});
+    const first=document.getElementById("first-half"), monthButton=document.getElementById("toggle-months");
+    monthButton.addEventListener("click",()=>{const open=!first.classList.contains("visible");first.classList.toggle("visible",open);monthButton.textContent=open?"收起上半年 ←":"展开上半年 1—6 月 →"});
+    renderYears();
+  </script>
+</body>
+</html>

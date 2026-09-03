@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>玄衡 · 岁运时间轴第二版预览</title>
+  <style>
+    :root{--ink:#17191d;--muted:#808691;--line:#dfe2e8;--surface:rgba(255,255,255,.88);--soft:#f1f2f4;--lav:#ece9ff;--lav-line:#aaa0ff;--violet:#7466ef;--cyan:#e6f3f5;--sand:#f7eddd;--serif:"Songti SC","STSong",serif;--sans:Inter,"PingFang SC","Microsoft YaHei",sans-serif;--shadow:0 22px 64px rgba(34,40,55,.075)}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--sans);background:linear-gradient(rgba(108,116,150,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(108,116,150,.045) 1px,transparent 1px),radial-gradient(circle at 78% 5%,rgba(188,183,255,.22),transparent 34%),#f2f4f8;background-size:56px 56px,56px 56px,auto,auto}button{font:inherit;color:inherit}h1,h2,h3,p{margin:0}
+    .topbar{max-width:1680px;height:86px;margin:22px auto 0;padding:0 30px;border:1px solid rgba(255,255,255,.82);border-radius:27px;background:rgba(255,255,255,.8);backdrop-filter:blur(18px);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:14px}.seal{width:48px;height:48px;border-radius:14px;background:var(--ink);color:#fff;display:grid;place-items:center;font:32px/1 var(--serif)}.brand strong{display:block;font:25px/1 var(--serif)}.brand small{display:block;margin-top:6px;color:#9ca1aa;font-size:9px;letter-spacing:.16em}.nav{display:flex;gap:4px;padding:6px;border-radius:15px;background:#eef0f3}.nav span{padding:10px 17px;border-radius:11px;color:#777d86;font-size:13px}.nav .active{background:var(--ink);color:#fff}.draft{font-size:10px;letter-spacing:.14em;color:var(--violet)}
+    main{max-width:1680px;margin:74px auto;padding:0 64px 90px}.eyebrow{display:block;color:var(--violet);font-size:11px;font-weight:700;letter-spacing:.16em}.hero h1{font:76px/.96 var(--serif);margin:18px 0 16px}.hero p{color:var(--muted);font-size:16px}.panel{margin-top:54px;padding:42px;border:1px solid var(--line);border-radius:30px;background:var(--surface);box-shadow:var(--shadow)}.panel+.panel{margin-top:22px}.section-label{display:block;color:#969ca6;font:700 10px/1 var(--sans);letter-spacing:.16em;margin-bottom:17px}.panel h2{font:38px/1 var(--serif);margin-bottom:28px}
+    .luck-track{display:flex;gap:10px;overflow-x:auto;padding:1px 1px 8px;scrollbar-width:thin}.luck{min-width:102px;border:0;border-radius:16px;background:#f0f1f3;padding:17px 13px;cursor:pointer}.luck strong{display:block;font:24px/1 var(--serif);font-weight:500}.luck small{display:block;margin-top:12px;color:#7d838d;font-size:10px}.luck.active{background:var(--ink);color:#fff}.luck.active small{color:#c9cbd0}.luck-detail{margin-top:14px;padding:17px 19px;border-radius:16px;background:#f0f1f3;color:#6e747d;font-size:12px;line-height:1.75}.luck-detail b{display:block;color:#5c626b;margin-bottom:3px}
+    .year-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.year-card{min-height:190px;padding:21px;border:1px solid transparent;border-radius:19px;background:#f0f1f3}.year-card.current{background:var(--lav);border-color:var(--lav-line)}.year-card span{font-size:10px;color:#858b95;letter-spacing:.08em}.year-card strong{display:block;font:29px/1 var(--serif);margin:20px 0 14px}.year-card p{color:#5f6570;font-size:12px;line-height:1.75}
+    .addition{margin-top:30px;padding-top:28px;border-top:1px dashed #d8dbe1}.addition-tag{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border-radius:999px;background:#efedff;color:#665cdc;font-size:10px;font-weight:700;letter-spacing:.1em}.addition-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin:18px 0}.addition-head h3{font:31px/1 var(--serif)}.addition-head p{margin-top:9px;color:var(--muted);font-size:11px}.tools{display:flex;align-items:center;gap:10px}.switch{display:flex;align-items:center;gap:8px;color:#6e747f;font-size:11px}.switch input{accent-color:var(--violet)}.outline{border:1px solid #ccd0d8;background:#fff;border-radius:12px;padding:10px 14px;cursor:pointer}.outline:hover{border-color:var(--violet);color:var(--violet)}
+    .annual-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.annual-cell{min-height:114px;padding:15px 11px;border:1px solid #e3e5e9;border-radius:15px;background:#f6f6f7;text-align:left;cursor:pointer;position:relative}.annual-cell:hover{border-color:#bcb6ee}.annual-cell.selected{background:var(--ink);border-color:var(--ink);color:#fff}.annual-cell .age{display:block;color:#8b9098;font-size:10px}.annual-cell.selected .age{color:#c1c4c9}.annual-cell strong{display:block;font:25px/1 var(--serif);margin:13px 0 8px}.annual-cell small{color:#858b94;font-size:10px}.annual-cell.selected small{color:#c8cad0}.annual-cell .dot{position:absolute;right:12px;top:12px;width:6px;height:6px;border-radius:50%;background:var(--violet)}.annual-cell.selected .dot{background:#fff}.annual-detail,.month-detail{margin-top:12px;padding:17px 19px;border-radius:16px;background:linear-gradient(90deg,var(--lav),#f4f2ff);font-size:12px;line-height:1.7;color:#5f5b82}.annual-detail b,.month-detail b{color:var(--ink)}
+    .addition.first-addition{margin-top:0;padding-top:0;border-top:0}
+    .month-stage{padding:20px;border-radius:22px;background:#f4f4f5}.half-label{display:flex;justify-content:space-between;margin:0 3px 10px;color:#858b94;font-size:10px}.month-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.month-row+.half-label{margin-top:18px}.month-cell{min-height:106px;padding:14px 11px;border:1px solid #e0e2e6;border-radius:14px;background:#fff;text-align:left;cursor:pointer}.month-cell.selected{border-color:var(--lav-line);background:var(--lav)}.month-cell .date{display:block;color:#898f98;font-size:9px}.month-cell strong{display:block;font:23px/1 var(--serif);margin:12px 0 7px}.month-cell small{color:#858b94;font-size:9px}.month-cell.current strong{color:#5f54db}.month-cell.current:after{content:"当前";float:right;margin-top:-23px;padding:3px 6px;border-radius:999px;background:var(--violet);color:#fff;font-size:8px}.collapsed{display:none}.rule-note{display:flex;gap:18px;margin-top:18px;color:#8a9099;font-size:10px;line-height:1.65}.rule-note span{flex:1}.rule-note b{color:#616771}
+    @media(max-width:1050px){.topbar{margin:12px}.nav{display:none}main{margin-top:48px;padding:0 18px 60px}.hero h1{font-size:50px}.panel{padding:26px 18px}.year-cards{grid-template-columns:1fr}.annual-strip,.month-row{grid-template-columns:repeat(2,1fr)}.addition-head{display:block}.tools{margin-top:15px}.rule-note{display:block}.rule-note span{display:block;margin-top:8px}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="seal">玄</span><span><strong>玄衡</strong><small>BAZI OBSERVATORY</small></span></div><div class="nav"><span>命盘研判</span><span class="active">岁运时间轴</span><span>问一件事</span></div><span class="draft">V2 PREVIEW · 不改正式页面</span></header>
+  <main>
+    <section class="hero"><span class="eyebrow">TIMING · 岁运</span><h1>岁运时间轴</h1><p>以大运为环境、流年为引动，查看不同阶段的提示。</p></section>
+
+    <!-- 图2红框原有内容：结构与信息层级保持不变 -->
+    <section class="panel">
+      <span class="section-label">DECADE LUCK</span><h2>大运走势</h2>
+      <div class="luck-track" id="luck-track"></div>
+      <div class="luck-detail" id="luck-detail"></div>
+    </section>
+    <section class="panel">
+      <!-- 图1新增：原年度提示区已按标注删除 -->
+      <div class="addition first-addition">
+        <span class="addition-tag">＋ 图1新增区域</span>
+        <div class="addition-head"><div><h3>本大运流年走势</h3><p>默认展示当前起的五年；点击某一年，在下方展开该年的详细解读。</p></div><div class="tools"><button class="outline" id="toggle-years">展开</button></div></div>
+        <div class="annual-strip" id="annual-strip"></div>
+        <div class="annual-detail" id="annual-detail"></div>
+      </div>
+
+      <div class="addition">
+        <span class="addition-tag">＋ 图1新增区域</span>
+        <div class="addition-head"><div><h3>流月走势</h3><p>按十二节交接换月；当前处在第 7—12 个流月，默认先展示这一组。</p></div><div class="tools"><button class="outline" id="toggle-months">展开</button></div></div>
+        <div class="month-stage">
+          <div id="first-half" class="collapsed"><div class="half-label"><span>第 1—6 个流月</span><span>立春—小暑</span></div><div class="month-row" id="first-row"></div></div>
+          <div class="half-label"><span>当前展示 · 第 7—12 个流月</span><span>立秋—次年小寒</span></div><div class="month-row" id="second-row"></div>
+          <div class="month-detail" id="month-detail"></div>
+        </div>
+        <div class="rule-note"><span><b>点击：</b>选择流月后，在原位置下方展示详情，不跳转页面。</span><span><b>换月：</b>例如丙申月为 8月7日19:38—9月7日22:40，白露后才进入丁酉月。</span><span><b>解读：</b>正式版必须同时带入原局、大运、流年和流月。</span></div>
+      </div>
+    </section>
+  </main>
+  <script>
+    const lucks=[
+      ["丙午","0岁-3岁1个月"],["乙巳","3-12岁"],["甲辰","13-22岁"],["癸卯","23-32岁"],["壬寅","33-42岁"],["辛丑","43-52岁"],["庚子","53-62岁"],["己亥","63-72岁"],["戊戌","73-82岁"]
+    ];
+    const luckTrack=document.getElementById("luck-track"),luckDetail=document.getElementById("luck-detail");
+    function selectLuck(index){luckTrack.querySelectorAll(".luck").forEach((el,i)=>el.classList.toggle("active",i===index));const [pillar,age]=lucks[index];luckDetail.innerHTML=`<b>${pillar} · ${age}</b>${pillar==="癸卯"?"癸水正印透出，直接调候润局。卯木为刃，身弱得强根。此运为人生重要上升期。事业上易得贵人相助，学习能力、思考深度提升，适合进修、考证或进入新领域。感情上易遇温柔体贴的对象，关系较为和谐。财运平稳，宜储蓄。":"切换大运后，此处显示该阶段的结构、变化与行动参考。"}`}
+    luckTrack.innerHTML=lucks.map(([p,a],i)=>`<button class="luck ${i===3?"active":""}" data-index="${i}"><strong>${p}</strong><small>${a}</small></button>`).join("");luckTrack.addEventListener("click",e=>{const b=e.target.closest(".luck");if(b)selectLuck(Number(b.dataset.index))});selectLuck(3);
+
+    const years=[[2025,"乙巳",23],[2026,"丙午",24],[2027,"丁未",25],[2028,"戊申",26],[2029,"己酉",27],[2030,"庚戌",28],[2031,"辛亥",29],[2032,"壬子",30],[2033,"癸丑",31],[2034,"甲寅",32]];
+    const annualStrip=document.getElementById("annual-strip"),annualDetail=document.getElementById("annual-detail");let yearsOpen=false,selectedYear=2026;
+    function renderYears(){const visible=yearsOpen?years:years.slice(1,6);annualStrip.innerHTML=visible.map(([year,pillar,age])=>`<button class="annual-cell ${year===selectedYear?"selected":""}" data-year="${year}">${year===2026?'<i class="dot"></i>':''}<span class="age">${age}岁</span><strong>${pillar}</strong><small>${year}年</small></button>`).join("");document.getElementById("toggle-years").textContent=yearsOpen?"收起":"展开";showYear(selectedYear,false)}
+    function showYear(year,rerender=true){selectedYear=year;if(rerender)renderYears();const item=years.find(x=>x[0]===year);annualDetail.innerHTML=`<b>${item[0]} · ${item[1]} · ${item[2]}岁</b>　这里展开本流年的完整趋势：与原局、大运的生克关系、主要主题、风险提醒与行动参考。当前为交互占位，正式版由确定性排盘结果驱动。`}
+    annualStrip.addEventListener("click",e=>{const b=e.target.closest(".annual-cell");if(b)showYear(Number(b.dataset.year))});document.getElementById("toggle-years").addEventListener("click",()=>{yearsOpen=!yearsOpen;renderYears()});renderYears();
+
+    const first=[["立春","庚寅","2.4","3.5"],["惊蛰","辛卯","3.5","4.5"],["清明","壬辰","4.5","5.5"],["立夏","癸巳","5.5","6.5"],["芒种","甲午","6.5","7.7"],["小暑","乙未","7.7","8.7"]];
+    const second=[["立秋","丙申","8.7","9.7",true],["白露","丁酉","9.7","10.8"],["寒露","戊戌","10.8","11.7"],["立冬","己亥","11.7","12.7"],["大雪","庚子","12.7","1.5"],["小寒","辛丑","1.5","2.4"]];let selectedMonth="丙申",monthsOpen=false;
+    function monthMarkup(items){return items.map(([term,pillar,start,end,current])=>`<button class="month-cell ${current?"current":""} ${pillar===selectedMonth?"selected":""}" data-pillar="${pillar}" data-term="${term}" data-range="${start}—${end}"><span class="date">${start} 起</span><strong>${pillar}</strong><small>${term}换月</small></button>`).join("")}
+    function renderMonths(){document.getElementById("first-row").innerHTML=monthMarkup(first);document.getElementById("second-row").innerHTML=monthMarkup(second);document.getElementById("first-half").classList.toggle("collapsed",!monthsOpen);document.getElementById("toggle-months").textContent=monthsOpen?"收起":"展开"}
+    function showMonth(button){selectedMonth=button.dataset.pillar;renderMonths();document.getElementById("month-detail").innerHTML=`<b>${button.dataset.pillar}月 · ${button.dataset.term}起 · ${button.dataset.range}</b>　选择后在这里显示流月主题、与当年及当前大运的关系、可观察信号和行动建议。`}
+    document.querySelector(".month-stage").addEventListener("click",e=>{const b=e.target.closest(".month-cell");if(b)showMonth(b)});document.getElementById("toggle-months").addEventListener("click",()=>{monthsOpen=!monthsOpen;renderMonths()});renderMonths();showMonth(document.querySelector('[data-pillar="丙申"]'));
+  </script>
+</body>
+</html>
