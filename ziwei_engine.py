@@ -13,13 +13,14 @@ import math
 from typing import Any
 
 
-RULESET_VERSION = "numerologist-skills-ea28c3f-xuanheng-v1"
+RULESET_VERSION = "numerologist-skills-ea28c3f-xuanheng-v2"
 BRANCHES = ["寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑"]
 HOUR_BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
 STEMS = list("甲乙丙丁戊己庚辛壬癸")
 PALACE_NAMES = ["命宫", "兄弟宫", "夫妻宫", "子女宫", "财帛宫", "疾厄宫", "迁移宫", "交友宫", "官禄宫", "田宅宫", "福德宫", "父母宫"]
 MAIN_STARS = ["紫微", "天机", "太阳", "武曲", "天同", "廉贞", "天府", "太阴", "贪狼", "巨门", "天相", "天梁", "七杀", "破军"]
 ASSISTANT_STARS = ["文昌", "文曲", "左辅", "右弼", "天魁", "天钺", "禄存", "擎羊", "陀罗", "火星", "铃星", "地空", "地劫", "天马"]
+SECONDARY_STARS = ["天刑", "天姚", "红鸾", "天喜", "孤辰", "寡宿", "天哭", "天虚"]
 
 PALACE_RELATIONS = {
     "命宫": ("迁移宫", "财帛宫", "官禄宫"),
@@ -143,6 +144,31 @@ def _assistant_star_positions(lunar_month: int, time_branch: str, year_stem: str
     return positions
 
 
+def _secondary_star_positions(lunar_month: int, year_branch: str) -> dict[str, str]:
+    """安常用杂曜。
+
+    这里只收录上游解读规范明确会使用的八颗星，并把定位结果作为
+    可核验数据返回；其余杂曜后续可按流派作为独立规则集扩充。
+    """
+    month_offset = lunar_month - 1
+    year_index = list("子丑寅卯辰巳午未申酉戌亥").index(year_branch)
+    solitude_group = next(
+        group for group in ("亥子丑", "寅卯辰", "巳午未", "申酉戌") if year_branch in group
+    )
+    lonely = {"亥子丑": "寅", "寅卯辰": "巳", "巳午未": "申", "申酉戌": "亥"}[solitude_group]
+    widow = {"亥子丑": "戌", "寅卯辰": "丑", "巳午未": "辰", "申酉戌": "未"}[solitude_group]
+    return {
+        "天刑": _branch(BRANCHES.index("酉") + month_offset),
+        "天姚": _branch(BRANCHES.index("丑") + month_offset),
+        "红鸾": _branch(BRANCHES.index("卯") - year_index),
+        "天喜": _branch(BRANCHES.index("酉") - year_index),
+        "孤辰": lonely,
+        "寡宿": widow,
+        "天哭": _branch(BRANCHES.index("午") - year_index),
+        "天虚": _branch(BRANCHES.index("午") + year_index),
+    }
+
+
 def calculate_chart(*, lunar_year: int, lunar_month: int, lunar_day: int, hour: int, minute: int, sex: str, is_leap: bool = False, source: dict[str, Any] | None = None) -> dict[str, Any]:
     if not 1 <= lunar_month <= 12 or not 1 <= lunar_day <= 30:
         raise ValueError("农历月日超出紫微排盘范围")
@@ -159,7 +185,8 @@ def calculate_chart(*, lunar_year: int, lunar_month: int, lunar_day: int, hour: 
     bureau_name, bureau_number = _bureau(palace_stems[ming_branch], ming_branch)
     main_positions = _main_star_positions(ziwei_position(bureau_number, lunar_day))
     assistant_positions = _assistant_star_positions(lunar_month, time_branch, year_stem, year_branch)
-    star_positions = {**main_positions, **assistant_positions}
+    secondary_positions = _secondary_star_positions(lunar_month, year_branch)
+    star_positions = {**main_positions, **assistant_positions, **secondary_positions}
 
     palace_name_by_branch = {_branch(ming_index - offset): name for offset, name in enumerate(PALACE_NAMES)}
     palaces: list[dict[str, Any]] = []
@@ -167,11 +194,13 @@ def calculate_chart(*, lunar_year: int, lunar_month: int, lunar_day: int, hour: 
         name = palace_name_by_branch[branch]
         main = [{"name": star, "brightness": BRIGHTNESS[star][branch_index]} for star in MAIN_STARS if main_positions[star] == branch]
         assistants = [star for star in ASSISTANT_STARS if assistant_positions[star] == branch]
+        secondary = [star for star in SECONDARY_STARS if secondary_positions[star] == branch]
         opposite, triad_one, triad_two = PALACE_RELATIONS[name]
         palaces.append({
             "name": name, "stem": palace_stems[branch], "branch": branch,
             "isMing": branch == ming_branch, "isShen": branch == shen_branch,
-            "mainStars": main, "assistantStars": assistants, "transformations": [],
+            "mainStars": main, "assistantStars": assistants, "secondaryStars": secondary,
+            "transformations": [], "flyingTransformations": [],
             "relations": {"opposite": opposite, "triads": [triad_one, triad_two]},
         })
     palace_by_branch = {palace["branch"]: palace for palace in palaces}
@@ -182,6 +211,15 @@ def calculate_chart(*, lunar_year: int, lunar_month: int, lunar_day: int, hour: 
         item = {"type": kind, "star": star, "branch": branch, "palace": palace_by_branch[branch]["name"]}
         transformations.append(item)
         palace_by_branch[branch]["transformations"].append({"type": kind, "star": star})
+
+    palace_flying_transformations = []
+    for origin in palaces:
+        flying = _transformation_layer_from_positions(star_positions, palace_by_branch, origin["stem"], origin["name"])
+        origin["flyingTransformations"] = flying
+        palace_flying_transformations.append({
+            "originPalace": origin["name"], "originStem": origin["stem"],
+            "originBranch": origin["branch"], "transformations": flying,
+        })
 
     is_yang_year = year_stem in "甲丙戊庚壬"
     forward = (sex == "男" and is_yang_year) or (sex == "女" and not is_yang_year)
@@ -197,7 +235,9 @@ def calculate_chart(*, lunar_year: int, lunar_month: int, lunar_day: int, hour: 
         "twelvePalaces": len(palaces) == 12 and len({p["name"] for p in palaces}) == 12,
         "fourteenMainStars": len(main_positions) == 14 and set(main_positions) == set(MAIN_STARS),
         "assistantStars": len(assistant_positions) == len(ASSISTANT_STARS),
+        "secondaryStars": len(secondary_positions) == len(SECONDARY_STARS),
         "fourTransformations": len(transformations) == 4 and all(item["star"] in star_positions for item in transformations),
+        "palaceFlyingTransformations": len(palace_flying_transformations) == 12 and all(len(item["transformations"]) == 4 for item in palace_flying_transformations),
         "decadesContinuous": all(item["endAge"] + 1 == decades[index + 1]["startAge"] for index, item in enumerate(decades[:-1])),
     }
     if not all(checks.values()):
@@ -214,6 +254,7 @@ def calculate_chart(*, lunar_year: int, lunar_month: int, lunar_day: int, hour: 
         "rules": {"lateZiDayChange": True, "leapMonthPolicy": "same_month_number", "ageSystem": "虚岁", "decadeDirection": "顺行" if forward else "逆行"},
         "core": {"mingPalace": ming_branch, "shenPalace": shen_branch, "bureau": bureau_name, "bureauNumber": bureau_number, "destinyMaster": destiny_master, "bodyMaster": body_master, "ziweiPalace": main_positions["紫微"], "tianfuPalace": main_positions["天府"]},
         "palaces": palaces, "starLocations": star_positions, "transformations": transformations,
+        "palaceFlyingTransformations": palace_flying_transformations,
         "decades": decades, "selfCheck": {"passed": True, "checks": checks}, "warnings": warnings,
         "disclaimer": "紫微斗数属于传统文化参考；排盘结果受子时换日、闰月归属与流派口径影响，不替代现实专业意见。",
     }
@@ -227,12 +268,20 @@ def _palace_for_star(chart: dict[str, Any], star: str) -> dict[str, Any]:
     return next(palace for palace in chart["palaces"] if palace["branch"] == branch)
 
 
-def _transformation_layer(chart: dict[str, Any], stem: str, layer: str) -> list[dict[str, Any]]:
+def _transformation_layer_from_positions(
+    star_positions: dict[str, str], palace_by_branch: dict[str, dict[str, Any]], stem: str, layer: str
+) -> list[dict[str, Any]]:
     items = []
     for kind, star in zip(("化禄", "化权", "化科", "化忌"), SIHUA[stem]):
-        palace = _palace_for_star(chart, star)
-        items.append({"layer": layer, "type": kind, "star": star, "palace": palace["name"], "branch": palace["branch"]})
+        branch = star_positions[star]
+        palace = palace_by_branch[branch]
+        items.append({"layer": layer, "type": kind, "star": star, "palace": palace["name"], "branch": branch})
     return items
+
+
+def _transformation_layer(chart: dict[str, Any], stem: str, layer: str) -> list[dict[str, Any]]:
+    by_branch = {palace["branch"]: palace for palace in chart["palaces"]}
+    return _transformation_layer_from_positions(chart["starLocations"], by_branch, stem, layer)
 
 
 def focus_palaces(chart: dict[str, Any]) -> list[dict[str, Any]]:
@@ -245,6 +294,7 @@ def focus_palaces(chart: dict[str, Any]) -> list[dict[str, Any]]:
         result.append({
             "name": name, "stem": palace["stem"], "branch": palace["branch"],
             "mainStars": palace["mainStars"], "assistantStars": palace["assistantStars"],
+            "secondaryStars": palace.get("secondaryStars", []),
             "transformations": palace["transformations"], "relatedPalaces": related_names,
             "relatedMainStars": [
                 {"palace": related, "stars": [item["name"] for item in by_name[related]["mainStars"]]}
@@ -324,10 +374,37 @@ def timing_layers(chart: dict[str, Any], target_year: int) -> dict[str, Any]:
         for year in range(first_year, first_year + 10):
             stem, branch = lunar_year_pillar(year)
             decade_years.append({"year": year, "age": year - birth_year + 1, "stem": stem, "branch": branch, "pillar": stem + branch})
+    interactions = _timing_interactions(layers, annual_palace["name"])
     return {
         "targetYear": target_year, "nominalAge": nominal_age,
         "annualPillar": annual_stem + annual_branch,
         "annualMingPalace": {"name": annual_palace["name"], "branch": annual_branch},
         "currentDecade": current_decade, "decadeYears": decade_years, "layers": layers,
+        "interactions": interactions,
         "rule": "流年地支所在本命宫位作为流年命宫；大限以所在宫干、流年以流年天干飞四化。",
     }
+
+
+def _timing_interactions(layers: list[dict[str, Any]], annual_palace: str) -> list[dict[str, Any]]:
+    """从三层四化中抽取可复核的叠加关系，不直接下吉凶结论。"""
+    by_palace: dict[str, list[dict[str, Any]]] = {}
+    for layer in layers:
+        for item in layer.get("transformations", []):
+            enriched = {**item, "layer": layer["name"]}
+            by_palace.setdefault(item["palace"], []).append(enriched)
+    result: list[dict[str, Any]] = []
+    for palace, items in by_palace.items():
+        types = [item["type"] for item in items]
+        layers_here = sorted({item["layer"] for item in items})
+        evidence = [f"{item['layer']}·{item['star']}{item['type']}" for item in items]
+        if len(layers_here) >= 2:
+            result.append({"type": "层级汇聚", "palace": palace, "layers": layers_here, "evidence": evidence})
+        if types.count("化禄") >= 2:
+            result.append({"type": "双禄叠见", "palace": palace, "layers": layers_here, "evidence": evidence})
+        if types.count("化忌") >= 2:
+            result.append({"type": "双忌叠见", "palace": palace, "layers": layers_here, "evidence": evidence})
+        if "化禄" in types and "化忌" in types:
+            result.append({"type": "禄忌同宫", "palace": palace, "layers": layers_here, "evidence": evidence})
+        if palace == annual_palace:
+            result.append({"type": "流年命宫触发", "palace": palace, "layers": layers_here, "evidence": evidence})
+    return result

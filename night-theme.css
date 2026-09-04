@@ -146,3 +146,70 @@ body.question-history-open{overflow:hidden}
   .editor-page .editor-main{border-radius:0}
   .editor-page .editor-heading>div>span{display:none}
 }
+
+/* 紫微斗数完整模块：命盘、解读、运限和历史共用同一视觉语法。 */
+.ziwei-report[hidden],.ziwei-report-loading[hidden],.ziwei-report-empty[hidden]{display:none!important}
+.ziwei-feature-nav button{min-height:38px;padding:0 14px;border:0;border-radius:5px;background:transparent;color:#8f949a;font:inherit;white-space:nowrap;cursor:pointer}
+.ziwei-feature-nav button:hover{color:var(--ink)}
+.ziwei-feature-nav button.active{background:var(--gold);color:#111318}
+.ziwei-secondary{margin-top:5px;color:#b7a481;font-size:10px;line-height:1.55}
+.ziwei-reading-section,.ziwei-history{scroll-margin-top:112px;padding:22px;border:1px solid var(--line);border-radius:12px;background:rgba(23,26,31,.94);box-shadow:var(--shadow)}
+.ziwei-reading-head,.ziwei-history-head{display:flex;align-items:end;justify-content:space-between;gap:22px}
+.ziwei-reading-head small,.ziwei-history-head small,.ziwei-report-title small,.ziwei-report-columns small,.ziwei-report-conclusion small{color:var(--gold);font-size:9px;letter-spacing:.14em}
+.ziwei-reading-head h2,.ziwei-history-head h2{margin:6px 0 4px;font:29px var(--serif)}
+.ziwei-reading-head p,.ziwei-history-head>span{margin:0;color:#8f949a;font-size:11px}
+.ziwei-reading-controls{display:flex;align-items:end;gap:9px}
+.ziwei-reading-controls label{display:grid;gap:5px;color:#8f949a;font-size:10px}
+.ziwei-reading-controls select{min-width:120px;padding:9px 12px;border:1px solid var(--line);border-radius:5px;background:#111419;color:var(--ink)}
+.ziwei-reading-controls button{min-height:39px;padding:0 15px;border:0;border-radius:5px;background:var(--gold);color:#111318;font-weight:650}
+.ziwei-reading-controls button:disabled{opacity:.45}
+.ziwei-report-empty{margin-top:16px;padding:22px;border:1px dashed rgba(225,204,159,.22);border-radius:8px;background:#111419;text-align:center}
+.ziwei-report-empty span{color:var(--ink);font-family:var(--serif);font-size:18px}
+.ziwei-report-empty p{margin:6px 0 0;color:#83888e;font-size:11px}
+.ziwei-report-loading{min-height:110px;display:flex;align-items:center;justify-content:center;gap:10px;color:#a8a198}
+.ziwei-report-loading i{width:14px;height:14px;border:2px solid rgba(210,173,104,.25);border-top-color:var(--gold);border-radius:50%;animation:ziweiSpin .8s linear infinite}
+.ziwei-report{display:grid;gap:14px;margin-top:18px}
+.ziwei-report-title{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:20px;border-left:2px solid var(--gold);background:#111419}
+.ziwei-report-title h3{margin:7px 0 7px;font:30px var(--serif)}
+.ziwei-report-title p{max-width:780px;margin:0;color:#a4a7aa;line-height:1.75}
+.ziwei-report-title>a{flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:5px;color:var(--gold);font-size:11px;text-decoration:none}
+.ziwei-report-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.ziwei-report-columns article,.ziwei-palace-readings article,.ziwei-report-conclusion>div{padding:16px;border:1px solid var(--line);border-radius:7px;background:#20242a}
+.ziwei-report ul{display:grid;gap:7px;margin:10px 0 0;padding-left:16px;color:#b0b2b4;font-size:11px;line-height:1.65}
+.ziwei-palace-readings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.ziwei-palace-readings article>small{color:var(--gold);font-size:9px;letter-spacing:.12em}
+.ziwei-palace-readings h4,.ziwei-report-conclusion h4{margin:7px 0 6px;color:var(--ink);font:19px var(--serif)}
+.ziwei-palace-readings p,.ziwei-report-conclusion p{margin:0;color:#a2a5a8;font-size:11px;line-height:1.72}
+.ziwei-other-palaces{border:1px solid var(--line);border-radius:7px;background:#111419}
+.ziwei-other-palaces summary{padding:13px 16px;color:var(--gold);font-size:11px;cursor:pointer}
+.ziwei-other-palaces>.ziwei-palace-readings{padding:0 12px 12px}
+.ziwei-report-conclusion{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.ziwei-report-disclaimer{margin:0;color:#777c82;font-size:10px}
+.ziwei-interactions{margin-top:12px;padding:14px;border:1px solid rgba(225,204,159,.12);border-radius:7px;background:#111419}
+.ziwei-interactions>small{color:var(--gold);font-size:9px;letter-spacing:.13em}
+.ziwei-interactions>div{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.ziwei-interactions span{display:grid;gap:3px;min-width:180px;padding:8px 10px;border:1px solid var(--line);border-radius:5px;color:#858a90;font-size:9px}
+.ziwei-interactions span b{color:var(--ink);font-size:11px;font-weight:500}
+.ziwei-interactions p{margin:8px 0 0;color:#858a90;font-size:11px}
+.ziwei-history{width:min(1160px,100%);margin-top:18px}
+.ziwei-history-list{display:grid;gap:8px;margin-top:16px}
+.ziwei-history-list>p{margin:0;padding:20px;border:1px dashed var(--line);border-radius:7px;color:#858a90;text-align:center}
+.ziwei-history-entry{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:15px;border:1px solid var(--line);border-radius:7px;background:#111419}
+.ziwei-history-entry small{color:var(--gold);font-size:9px;letter-spacing:.1em}
+.ziwei-history-entry h3{margin:5px 0 3px;font:19px var(--serif)}
+.ziwei-history-entry p{margin:0;color:#858a90;font-size:10px}
+.ziwei-history-entry>div:last-child{display:flex;gap:6px}
+.ziwei-history-entry button,.ziwei-history-entry a{padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:#20242a;color:var(--ink);font-size:10px;text-decoration:none;cursor:pointer}
+.ziwei-history-entry button:last-child{color:#d58d88}
+
+@media(max-width:900px){
+  .ziwei-reading-head,.ziwei-history-head{align-items:flex-start;flex-direction:column}
+  .ziwei-report-columns,.ziwei-palace-readings{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .ziwei-feature-nav{display:flex}
+  .ziwei-reading-section,.ziwei-history{padding:16px}
+  .ziwei-reading-controls{width:100%;align-items:stretch;flex-direction:column}
+  .ziwei-report-title,.ziwei-history-entry{align-items:flex-start;flex-direction:column}
+  .ziwei-report-conclusion{grid-template-columns:1fr}
+}

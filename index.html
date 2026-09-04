@@ -1068,7 +1068,7 @@
         <article><span>02 · AVAILABLE</span><h2>岁运时间轴</h2><p>沿大运与年度查看阶段性提示。</p><a href="#/timing" data-route="timing">进入功能 →</a></article>
         <article><span>03 · AVAILABLE</span><h2>问一件事</h2><p>围绕具体处境形成窗口与行动建议。</p><a href="#/question" data-route="question">进入功能 →</a></article>
         <article><span>04 · V2 AVAILABLE</span><h2>塔罗占问</h2><p>六种牌阵、逐张翻牌与可复现历史解读。</p><a href="#/tarot" data-route="tarot">开始占问 →</a></article>
-        <article><span>05 · V3 CALIBRATING</span><h2>紫微斗数</h2><p>十二宫、主辅星、四化与大限流年分层呈现。</p><a href="#/ziwei" data-route="ziwei">进入校盘版 →</a></article>
+        <article><span>05 · V3.2 RC</span><h2>紫微斗数</h2><p>十二宫、星曜、四化、运限与主题解读完整呈现。</p><a href="#/ziwei" data-route="ziwei">进入功能验收 →</a></article>
         <article><span>06 · V4 RC</span><h2>合缘</h2><p>用两份确定性命盘观察合冲、互补与相处议题。</p><a href="#/affinity" data-route="affinity">开始合缘 →</a></article>
       </section>
 
@@ -1332,13 +1332,13 @@
   <section class="site-page ziwei-page" id="ziwei-page" data-page="ziwei" aria-hidden="true">
     <header class="site-header internal-header">
       <a class="brand brand-home" href="#/home" data-route="home" aria-label="返回玄衡主页"><span class="seal">玄</span><span><strong>玄衡</strong><small>返回主页</small></span></a>
-      <nav class="feature-nav ziwei-feature-nav" aria-label="紫微功能"><a class="active" href="#/ziwei" data-route="ziwei">紫微命盘</a><span>三方四正 · 大限流年</span></nav>
+      <nav class="feature-nav ziwei-feature-nav" aria-label="紫微功能"><button class="active" type="button" data-ziwei-jump="ziwei-chart-section">紫微命盘</button><button type="button" data-ziwei-jump="ziwei-reading-section">命盘解读</button><button type="button" data-ziwei-jump="ziwei-timing-section">大限流年</button><button type="button" data-ziwei-jump="ziwei-history-section">历史报告</button></nav>
       <a class="profile-link" href="#/profile" data-route="profile">共用出生档案 ↗</a>
     </header>
     <main class="ziwei-main">
       <section class="ziwei-hero">
-        <div><p>ZIWEI · 紫微斗数</p><h1>十二宫星图</h1><span>复用八字出生档案，以确定性规则呈现宫位、星曜、四化与运限；当前为校盘版。</span></div>
-        <div class="ziwei-source"><i></i><b>V3 · 校盘中</b><small>确定性引擎已接入 · 仍待 30 盘对照</small></div>
+        <div><p>ZIWEI · 紫微斗数</p><h1>十二宫星图</h1><span>复用八字出生档案，以确定性规则呈现宫位、星曜、四化与运限；当前为功能完整 RC，排盘仍待样本校验。</span></div>
+        <div class="ziwei-source"><i></i><b>V3.2 · 功能完整 RC</b><small>模块闭环已接入 · 排盘仍待 30 盘对照</small></div>
       </section>
       <section class="ziwei-profile-bar">
         <div><small>出生档案</small><label for="ziwei-profile-select">选择要排盘的人</label><span>与四柱八字共用同一份资料，不重复录入。</span></div>
@@ -1354,17 +1354,28 @@
           <div><small>PERSONAL CHART · 三合派常用安星诀</small><h2 id="ziwei-profile-name">未命名资料的紫微命盘</h2><p id="ziwei-rule-summary"></p></div>
           <span class="ziwei-check" id="ziwei-check">结构自检</span>
         </div>
-        <div class="ziwei-board-scroll">
+        <div class="ziwei-board-scroll" id="ziwei-chart-section">
           <div class="ziwei-board" id="ziwei-board" aria-label="紫微十二宫盘面">
             <div class="ziwei-board-center" id="ziwei-palace-detail"></div>
           </div>
         </div>
-        <section class="ziwei-timing">
+        <section class="ziwei-reading-section" id="ziwei-reading-section">
+          <div class="ziwei-reading-head"><div><small>STRUCTURED READING · 结构化解读</small><h2>命盘解读</h2><p>先显示确定性证据，再给出可由现实检验的观察与行动建议。</p></div><div class="ziwei-reading-controls"><label>观察主题<select id="ziwei-topic"><option>整体</option><option>事业</option><option>财运</option><option>关系</option><option>流年</option></select></label><button id="ziwei-report-generate" type="button">生成解读 <span>→</span></button></div></div>
+          <div class="ziwei-report-empty" id="ziwei-report-empty"><span>解读不会改变排盘</span><p>选择主题后生成报告；未接入模型时仍可使用本地确定性证据形成基础报告。</p></div>
+          <div class="ziwei-report-loading" id="ziwei-report-loading" hidden><i></i><span>正在整理六个核心宫位与运限证据…</span></div>
+          <div class="ziwei-report" id="ziwei-report" hidden></div>
+        </section>
+        <section class="ziwei-timing" id="ziwei-timing-section">
           <div class="ziwei-timing-head"><div><small>DECADE &amp; ANNUAL · 运限四化</small><h2>大限与流年</h2><p>选择本大限中的年份，查看本命、大限、流年三层四化。</p></div><label>目标流年<select id="ziwei-year-select"></select></label></div>
           <div class="ziwei-decade" id="ziwei-decade"></div>
           <div class="ziwei-layers" id="ziwei-layers"></div>
+          <div class="ziwei-interactions" id="ziwei-interactions"></div>
           <p class="ziwei-disclaimer" id="ziwei-disclaimer"></p>
         </section>
+      </section>
+      <section class="ziwei-history" id="ziwei-history-section">
+        <div class="ziwei-history-head"><div><small>ARCHIVE · 紫微报告</small><h2>历史报告</h2></div><span>重开保留原盘、目标年份与解读，不重新生成。</span></div>
+        <div class="ziwei-history-list" id="ziwei-history-list"><p>暂无紫微报告。</p></div>
       </section>
     </main>
   </section>
@@ -1606,7 +1617,7 @@
     let historyRecords = [];
     let currentQuestionRecordId = "";
     const tarotState = {catalog:null, spread:"three", currentId:"", drawing:false};
-    const ziweiState = {chart:null, timing:null, profileId:"", selectedBranch:"", loading:false};
+    const ziweiState = {chart:null, timing:null, profileId:"", selectedBranch:"", currentId:"", loading:false, reporting:false};
     const affinityState = {relationship:"亲密关系", currentId:"", loading:false};
     let birthMap = null;
     let birthMarker = null;
@@ -3164,6 +3175,16 @@
     async function prepareZiwei({autoGenerate=false} = {}) {
       if (!historyRecords.length) await loadHistory();
       const profileId = populateZiweiProfiles();
+      await loadZiweiHistory();
+      const savedReadingId = localStorage.getItem("xuanhengZiweiReading") || "";
+      if (autoGenerate && savedReadingId) {
+        try {
+          await openZiweiReading(savedReadingId, {scroll:false});
+          return;
+        } catch (_error) {
+          localStorage.removeItem("xuanhengZiweiReading");
+        }
+      }
       if (autoGenerate && profileId && (!ziweiState.chart || ziweiState.profileId !== profileId)) {
         await generateZiweiChart(profileId);
       }
@@ -3176,7 +3197,7 @@
         : `<span class="ziwei-main-star"><small>无十四主星</small></span>`;
       const flags = `${palace.isMing ? "<i>命</i>" : ""}${palace.isShen ? "<i>身</i>" : ""}`;
       const transformations = (palace.transformations || []).map(item => `<span class="ziwei-transformation">${escapeHtml(item.star)}${escapeHtml(item.type)}</span>`).join("");
-      return `<button class="ziwei-palace ${palace.branch === ziweiState.selectedBranch ? "selected" : ""}" type="button" data-ziwei-branch="${escapeHtml(palace.branch)}" style="grid-area:${positions[palace.branch]}"><div class="ziwei-palace-head"><h3>${escapeHtml(palace.name)}</h3><span class="ziwei-palace-code">${escapeHtml(palace.stem)}${escapeHtml(palace.branch)}</span></div><div class="ziwei-palace-flags">${flags}</div><div class="ziwei-stars">${mainStars}</div>${palace.assistantStars?.length ? `<div class="ziwei-assistants">${palace.assistantStars.map(escapeHtml).join(" · ")}</div>` : ""}${transformations ? `<div class="ziwei-transformations">${transformations}</div>` : ""}</button>`;
+      return `<button class="ziwei-palace ${palace.branch === ziweiState.selectedBranch ? "selected" : ""}" type="button" data-ziwei-branch="${escapeHtml(palace.branch)}" style="grid-area:${positions[palace.branch]}"><div class="ziwei-palace-head"><h3>${escapeHtml(palace.name)}</h3><span class="ziwei-palace-code">${escapeHtml(palace.stem)}${escapeHtml(palace.branch)}</span></div><div class="ziwei-palace-flags">${flags}</div><div class="ziwei-stars">${mainStars}</div>${palace.assistantStars?.length ? `<div class="ziwei-assistants">${palace.assistantStars.map(escapeHtml).join(" · ")}</div>` : ""}${palace.secondaryStars?.length ? `<div class="ziwei-secondary">${palace.secondaryStars.map(escapeHtml).join(" · ")}</div>` : ""}${transformations ? `<div class="ziwei-transformations">${transformations}</div>` : ""}</button>`;
     }
 
     function renderZiweiPalaceDetail(branch) {
@@ -3184,15 +3205,18 @@
       if (!chart) return;
       const palace = chart.palaces.find(item => item.branch === branch) || chart.palaces.find(item => item.isMing) || chart.palaces[0];
       ziweiState.selectedBranch = palace.branch;
+      localStorage.setItem("xuanhengZiweiPalace", palace.branch);
       document.querySelectorAll("[data-ziwei-branch]").forEach(button => button.classList.toggle("selected", button.dataset.ziweiBranch === palace.branch));
       const related = [palace.name, palace.relations?.opposite, ...(palace.relations?.triads || [])].filter(Boolean).join(" · ");
       const structures = (chart.structures || []).map(item => item.name).join(" · ") || "未命中特定格局标签";
-      document.getElementById("ziwei-palace-detail").innerHTML = `<div><small>PALACE FOCUS · 宫位观察</small><h2>${escapeHtml(palace.name)} · ${escapeHtml(palace.stem)}${escapeHtml(palace.branch)}</h2><p>${palace.mainStars?.length ? `主星：${palace.mainStars.map(item => `${item.name}（${item.brightness}）`).join("、")}` : "此宫无十四主星，需借对宫与三方共同观察。"}</p><div class="ziwei-core-grid"><div><small>命宫／身宫</small><b>${escapeHtml(chart.core.mingPalace)}／${escapeHtml(chart.core.shenPalace)}</b></div><div><small>五行局</small><b>${escapeHtml(chart.core.bureau)}</b></div><div><small>命主／身主</small><b>${escapeHtml(chart.core.destinyMaster)}／${escapeHtml(chart.core.bodyMaster)}</b></div><div><small>格局证据</small><b>${escapeHtml(structures)}</b></div></div></div><div class="ziwei-related"><b>三方四正：</b>${escapeHtml(related)}<br><b>辅煞：</b>${escapeHtml((palace.assistantStars || []).join("、") || "无")}</div>`;
+      const flying = (palace.flyingTransformations || []).map(item => `${item.star}${item.type}→${item.palace}`).join("；");
+      document.getElementById("ziwei-palace-detail").innerHTML = `<div><small>PALACE FOCUS · 宫位观察</small><h2>${escapeHtml(palace.name)} · ${escapeHtml(palace.stem)}${escapeHtml(palace.branch)}</h2><p>${palace.mainStars?.length ? `主星：${palace.mainStars.map(item => `${item.name}（${item.brightness}）`).join("、")}` : "此宫无十四主星，需借对宫与三方共同观察。"}</p><div class="ziwei-core-grid"><div><small>命宫／身宫</small><b>${escapeHtml(chart.core.mingPalace)}／${escapeHtml(chart.core.shenPalace)}</b></div><div><small>五行局</small><b>${escapeHtml(chart.core.bureau)}</b></div><div><small>命主／身主</small><b>${escapeHtml(chart.core.destinyMaster)}／${escapeHtml(chart.core.bodyMaster)}</b></div><div><small>格局证据</small><b>${escapeHtml(structures)}</b></div></div></div><div class="ziwei-related"><b>三方四正：</b>${escapeHtml(related)}<br><b>辅煞：</b>${escapeHtml((palace.assistantStars || []).join("、") || "无")}<br><b>杂曜：</b>${escapeHtml((palace.secondaryStars || []).join("、") || "无")}<br><b>${escapeHtml(palace.stem)}干飞化：</b>${escapeHtml(flying || "无")}</div>`;
     }
 
     function renderZiweiChart(chart, record) {
       ziweiState.chart = chart;
-      ziweiState.selectedBranch = chart.core.mingPalace;
+      const savedBranch = localStorage.getItem("xuanhengZiweiPalace");
+      ziweiState.selectedBranch = chart.palaces.some(item => item.branch === savedBranch) ? savedBranch : chart.core.mingPalace;
       const board = document.getElementById("ziwei-board");
       board.innerHTML = `${chart.palaces.map(ziweiPalaceMarkup).join("")}<div class="ziwei-board-center" id="ziwei-palace-detail"></div>`;
       document.getElementById("ziwei-profile-name").textContent = `${record?.name || "未命名资料"}的紫微命盘`;
@@ -3202,7 +3226,10 @@
       document.getElementById("ziwei-disclaimer").textContent = `${chart.disclaimer || ""}${chart.warnings?.length ? ` ${chart.warnings.join(" ")}` : ""}`;
       document.getElementById("ziwei-empty").style.display = "none";
       document.getElementById("ziwei-result").hidden = false;
-      renderZiweiPalaceDetail(chart.core.mingPalace);
+      document.getElementById("ziwei-report").hidden = true;
+      document.getElementById("ziwei-report-empty").hidden = false;
+      ziweiState.currentId = "";
+      renderZiweiPalaceDetail(ziweiState.selectedBranch);
     }
 
     function renderZiweiTiming(timing) {
@@ -3215,6 +3242,74 @@
         ? `<b>${escapeHtml(decade.stem)}${escapeHtml(decade.branch)}大限 · ${decade.startAge}—${decade.endAge}岁</b>　行至${escapeHtml(decade.palace)}；${timing.targetYear}年虚岁${timing.nominalAge}，流年命宫落${escapeHtml(timing.annualMingPalace.name)}（${escapeHtml(timing.annualMingPalace.branch)}）。`
         : `<b>${timing.targetYear} · ${escapeHtml(timing.annualPillar)}</b>　当前年份不在已列大限范围内，流年命宫落${escapeHtml(timing.annualMingPalace.name)}。`;
       document.getElementById("ziwei-layers").innerHTML = (timing.layers || []).map(layer => `<article class="ziwei-layer"><small>${escapeHtml(layer.name)}四化 · ${escapeHtml(layer.stem)}干</small><h3>${escapeHtml(layer.name)}层</h3><ul>${(layer.transformations || []).map(item => `<li><b>${escapeHtml(item.star)}${escapeHtml(item.type)}</b><span>${escapeHtml(item.palace)} · ${escapeHtml(item.branch)}</span></li>`).join("")}</ul></article>`).join("");
+      document.getElementById("ziwei-interactions").innerHTML = timing.interactions?.length
+        ? `<small>三层叠加证据</small><div>${timing.interactions.map(item => `<span><b>${escapeHtml(item.palace)} · ${escapeHtml(item.type)}</b>${escapeHtml((item.evidence || []).join(" / "))}</span>`).join("")}</div>`
+        : `<small>三层叠加证据</small><p>当前年份未形成规则集定义的集中标签。</p>`;
+    }
+
+    function renderZiweiReport(interpretation, item) {
+      ziweiState.currentId = item?.id || ziweiState.currentId;
+      if (ziweiState.currentId) localStorage.setItem("xuanhengZiweiReading", ziweiState.currentId);
+      const sourceLabel = interpretation.source === "model" ? "模型基于排盘证据生成" : "本地确定性基础报告";
+      const list = values => `<ul>${(values || []).map(value => `<li>${escapeHtml(value)}</li>`).join("")}</ul>`;
+      document.getElementById("ziwei-report").innerHTML = `<div class="ziwei-report-title"><div><small>${escapeHtml(sourceLabel)} · ${escapeHtml(interpretation.topic || item?.topic || "整体")}</small><h3>${escapeHtml(interpretation.title || "紫微结构报告")}</h3><p>${escapeHtml(interpretation.summary || "")}</p></div>${ziweiState.currentId ? `<a href="${apiUrl(`/api/ziwei/export?id=${encodeURIComponent(ziweiState.currentId)}`)}" data-ziwei-export>导出 Markdown ↗</a>` : ""}</div><div class="ziwei-report-columns"><article><small>STRUCTURE · 结构证据</small>${list(interpretation.evidence)}</article><article><small>SUPPORT · 可利用线索</small>${list(interpretation.strengths)}</article><article><small>CHECK · 需复核线索</small>${list(interpretation.challenges)}</article></div><div class="ziwei-palace-readings">${(interpretation.palaces || []).map(palace => `<article><small>${escapeHtml(palace.name || "宫位")}</small><h4>${escapeHtml(palace.headline || "")}</h4><p>${escapeHtml(palace.summary || "")}</p>${list(palace.evidence)}</article>`).join("")}</div>${interpretation.otherPalaces?.length ? `<details class="ziwei-other-palaces"><summary>展开其余六宫</summary><div class="ziwei-palace-readings">${interpretation.otherPalaces.map(palace => `<article><small>${escapeHtml(palace.name || "宫位")}</small><h4>${escapeHtml(palace.headline || "")}</h4><p>${escapeHtml(palace.summary || "")}</p>${list(palace.evidence)}</article>`).join("")}</div></details>` : ""}<div class="ziwei-report-conclusion"><div><small>DECADE &amp; ANNUAL</small><h4>大限与流年</h4><p>${escapeHtml(interpretation.timingSummary || "")}</p></div><div><small>NEXT ACTION</small><h4>下一步</h4><p>${escapeHtml(interpretation.action || "")}</p></div></div><p class="ziwei-report-disclaimer">${escapeHtml(interpretation.disclaimer || "")}</p>`;
+      document.getElementById("ziwei-report-empty").hidden = true;
+      document.getElementById("ziwei-report").hidden = false;
+    }
+
+    async function generateZiweiReport() {
+      if (!ziweiState.profileId || !ziweiState.chart || ziweiState.reporting) return;
+      ziweiState.reporting = true;
+      const button = document.getElementById("ziwei-report-generate");
+      const loading = document.getElementById("ziwei-report-loading");
+      button.disabled = true;
+      loading.hidden = false;
+      document.getElementById("ziwei-report-empty").hidden = true;
+      try {
+        const year = ziweiState.timing?.targetYear || new Date().getFullYear();
+        const topic = document.getElementById("ziwei-topic").value;
+        const response = await fetch(apiUrl("/api/ziwei/report"), {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({historyId:ziweiState.profileId,topic,year})});
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(payload.error || "紫微解读生成失败");
+        renderZiweiReport(payload.interpretation, payload.item);
+        await loadZiweiHistory();
+        trackAcceptance("ziwei_reading_generated", "success", {cached:Boolean(payload.cached),intent:topic});
+      } catch (error) {
+        document.getElementById("ziwei-report-empty").hidden = false;
+        trackAcceptance("ziwei_reading_generated", "failure", {errorCode:acceptanceFailureCode(error)});
+        showToast(error.message || "紫微解读生成失败");
+      } finally {
+        ziweiState.reporting = false;
+        button.disabled = false;
+        loading.hidden = true;
+      }
+    }
+
+    async function loadZiweiHistory() {
+      const list = document.getElementById("ziwei-history-list");
+      try {
+        const response = await fetch(apiUrl("/api/ziwei/history"));
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(payload.error || "紫微历史读取失败");
+        list.innerHTML = payload.items?.length ? payload.items.map(item => `<article class="ziwei-history-entry"><div><small>${escapeHtml(item.topic)} · ${item.targetYear}年</small><h3>${escapeHtml(item.profileName)}的紫微报告</h3><p>${escapeHtml(item.title)} · ${escapeHtml(String(item.updatedAt || "").replace("T", " "))}</p></div><div><button type="button" data-ziwei-open="${escapeHtml(item.id)}">打开</button><a href="${apiUrl(`/api/ziwei/export?id=${encodeURIComponent(item.id)}`)}" data-ziwei-export>导出</a><button type="button" data-ziwei-delete="${escapeHtml(item.id)}">删除</button></div></article>`).join("") : `<p>暂无紫微报告。生成解读后会保存在这里。</p>`;
+      } catch (error) {
+        list.innerHTML = `<p>${escapeHtml(error.message || "紫微历史读取失败")}</p>`;
+      }
+    }
+
+    async function openZiweiReading(recordId, {scroll=true} = {}) {
+      const response = await fetch(apiUrl(`/api/ziwei/history?id=${encodeURIComponent(recordId)}`));
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error || "紫微报告不存在");
+      const item = payload.item;
+      ziweiState.profileId = item.profileId;
+      document.getElementById("ziwei-profile-select").value = item.profileId;
+      document.getElementById("ziwei-topic").value = item.topic;
+      renderZiweiChart(item.chart, {name:item.profileName});
+      renderZiweiTiming(item.timing);
+      renderZiweiReport(item.interpretation, item);
+      if (scroll) document.getElementById("ziwei-reading-section").scrollIntoView({behavior:"smooth",block:"start"});
+      trackAcceptance("ziwei_reading_opened", "success", {cached:true,intent:item.topic});
     }
 
     async function loadZiweiTiming(year) {
@@ -3536,9 +3631,19 @@
       ziweiState.profileId = event.target.value;
       ziweiState.chart = null;
       ziweiState.timing = null;
+      ziweiState.currentId = "";
+      localStorage.removeItem("xuanhengZiweiReading");
       if (event.target.value) generateZiweiChart(event.target.value);
     });
     document.getElementById("ziwei-generate").addEventListener("click", () => generateZiweiChart());
+    document.getElementById("ziwei-report-generate").addEventListener("click", generateZiweiReport);
+    document.querySelector(".ziwei-feature-nav").addEventListener("click", event => {
+      const trigger = event.target.closest("[data-ziwei-jump]");
+      if (!trigger) return;
+      const target = document.getElementById(trigger.dataset.ziweiJump);
+      if (target) target.scrollIntoView({behavior:"smooth",block:"start"});
+      document.querySelectorAll(".ziwei-feature-nav [data-ziwei-jump]").forEach(item => item.classList.toggle("active", item === trigger));
+    });
     document.getElementById("ziwei-board").addEventListener("click", event => {
       const palace = event.target.closest("[data-ziwei-branch]");
       if (palace) {
@@ -3549,11 +3654,39 @@
     document.getElementById("ziwei-year-select").addEventListener("change", async event => {
       try {
         await loadZiweiTiming(Number(event.target.value));
+        document.getElementById("ziwei-report").hidden = true;
+        document.getElementById("ziwei-report-empty").hidden = false;
+        ziweiState.currentId = "";
+        localStorage.removeItem("xuanhengZiweiReading");
         trackAcceptance("ziwei_timing_viewed", "success", {yearCount:ziweiState.timing?.decadeYears?.length || 0,layerCount:ziweiState.timing?.layers?.length || 0});
       } catch (error) {
         trackAcceptance("ziwei_timing_viewed", "failure", {errorCode:acceptanceFailureCode(error)});
         showToast(error.message || "紫微流年载入失败");
       }
+    });
+    document.getElementById("ziwei-history-list").addEventListener("click", async event => {
+      const open = event.target.closest("[data-ziwei-open]");
+      const remove = event.target.closest("[data-ziwei-delete]");
+      const exported = event.target.closest("[data-ziwei-export]");
+      if (exported) trackAcceptance("ziwei_reading_exported", "success", {method:"markdown"});
+      try {
+        if (open) await openZiweiReading(open.dataset.ziweiOpen);
+        if (remove) {
+          const response = await fetch(apiUrl(`/api/ziwei/history?id=${encodeURIComponent(remove.dataset.ziweiDelete)}`), {method:"DELETE"});
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) throw new Error(payload.error || "删除失败");
+          if (ziweiState.currentId === remove.dataset.ziweiDelete) {
+            ziweiState.currentId = "";
+            localStorage.removeItem("xuanhengZiweiReading");
+            document.getElementById("ziwei-report").hidden = true;
+            document.getElementById("ziwei-report-empty").hidden = false;
+          }
+          await loadZiweiHistory();
+        }
+      } catch (error) { showToast(error.message || "紫微历史操作失败"); }
+    });
+    document.getElementById("ziwei-report").addEventListener("click", event => {
+      if (event.target.closest("[data-ziwei-export]")) trackAcceptance("ziwei_reading_exported", "success", {method:"markdown"});
     });
     document.getElementById("api-modal-close").addEventListener("click", () => setApiModal(false));
     apiModal.addEventListener("click", event => { if (event.target === apiModal) setApiModal(false); });

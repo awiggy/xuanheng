@@ -51,6 +51,7 @@ KEYCHAIN_ACCOUNT = getpass.getuser()
 ANALYSIS_PROMPT_VERSION = "2026-09-03-history-v3"
 TAROT_PROMPT_VERSION = "2026-09-03-tarot-v1"
 AFFINITY_PROMPT_VERSION = "2026-09-03-affinity-v1"
+ZIWEI_PROMPT_VERSION = "2026-09-04-ziwei-v1"
 ANALYSIS_REFERENCE_FILES = (
     ROOT / "vendor" / "bazi-skill" / "references" / "classical-texts.md",
     ROOT / "vendor" / "bazi-skill" / "references" / "wuxing-tables.md",
@@ -105,6 +106,9 @@ ACCEPTANCE_EVENT_DEFINITIONS: dict[str, dict[str, Any]] = {
     "ziwei_self_check_passed": {"title": "紫微排盘结构自检通过", "category": "紫微斗数", "weight": 5, "required": True},
     "ziwei_palace_viewed": {"title": "查看紫微宫位与三方四正", "category": "紫微斗数", "weight": 2, "required": True},
     "ziwei_timing_viewed": {"title": "切换紫微流年与三层四化", "category": "紫微斗数", "weight": 3, "required": True},
+    "ziwei_reading_generated": {"title": "生成紫微结构化解读", "category": "紫微斗数", "weight": 4, "required": True},
+    "ziwei_reading_opened": {"title": "重新打开紫微报告", "category": "紫微斗数", "weight": 3, "required": True},
+    "ziwei_reading_exported": {"title": "导出紫微报告", "category": "紫微斗数", "weight": 2, "required": True},
     "affinity_completed": {"title": "完成一次双档案合缘计算", "category": "合缘", "weight": 5, "required": True},
     "affinity_history_opened": {"title": "重新打开合缘结果", "category": "合缘", "weight": 3, "required": True},
     "affinity_exported": {"title": "导出合缘结果", "category": "合缘", "weight": 2, "required": True},
@@ -251,6 +255,28 @@ def initialize_state() -> None:
             """
             CREATE INDEX IF NOT EXISTS idx_ziwei_chart_profile_updated
             ON ziwei_chart_cache(profile_id, updated_at DESC)
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ziwei_readings (
+                id TEXT PRIMARY KEY,
+                cache_key TEXT NOT NULL UNIQUE,
+                profile_id TEXT NOT NULL,
+                topic TEXT NOT NULL,
+                target_year INTEGER NOT NULL,
+                chart TEXT NOT NULL,
+                timing TEXT NOT NULL,
+                interpretation TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_ziwei_readings_profile_updated
+            ON ziwei_readings(profile_id, updated_at DESC)
             """
         )
         connection.execute(
@@ -449,9 +475,11 @@ def save_chart_history(payload: dict[str, Any], chart: dict[str, Any]) -> tuple[
             ).fetchone()
             if duplicate:
                 connection.execute("DELETE FROM ziwei_chart_cache WHERE profile_id=?", (duplicate["id"],))
+                connection.execute("DELETE FROM ziwei_readings WHERE profile_id=?", (duplicate["id"],))
                 connection.execute("DELETE FROM affinity_readings WHERE profile_a_id=? OR profile_b_id=?", (duplicate["id"], duplicate["id"]))
                 connection.execute("DELETE FROM chart_history WHERE id=?", (duplicate["id"],))
             connection.execute("DELETE FROM ziwei_chart_cache WHERE profile_id=?", (requested_id,))
+            connection.execute("DELETE FROM ziwei_readings WHERE profile_id=?", (requested_id,))
             connection.execute("DELETE FROM affinity_readings WHERE profile_a_id=? OR profile_b_id=?", (requested_id, requested_id))
             connection.execute(
                 """
@@ -688,9 +716,289 @@ def calculate_ziwei_cached(payload: dict[str, Any]) -> tuple[dict[str, Any], boo
     return chart, False
 
 
+ZIWEI_TOPICS = {"整体", "事业", "财运", "关系", "流年"}
+
+
+def _ziwei_palace_evidence(palace: dict[str, Any]) -> list[str]:
+    evidence: list[str] = []
+    main = palace.get("mainStars", [])
+    if main:
+        evidence.append("主星：" + "、".join(f"{item.get('name')}（{item.get('brightness')}）" for item in main))
+    else:
+        evidence.append("本宫无十四主星，需借对宫与三方共同观察")
+    if palace.get("assistantStars"):
+        evidence.append("辅煞：" + "、".join(palace["assistantStars"]))
+    if palace.get("secondaryStars"):
+        evidence.append("杂曜：" + "、".join(palace["secondaryStars"]))
+    if palace.get("transformations"):
+        evidence.append("生年四化：" + "、".join(f"{item.get('star')}{item.get('type')}" for item in palace["transformations"]))
+    evidence.append("三方四正：" + "、".join(palace.get("relatedPalaces", [])))
+    return evidence
+
+
+def local_ziwei_interpretation(chart: dict[str, Any], timing: dict[str, Any], topic: str) -> dict[str, Any]:
+    """用确定性排盘证据生成离线可用的基础报告。"""
+    focus = chart.get("focusPalaces", [])
+    palace_copy = {
+        "命宫": "观察整体表达、决策方式与长期主轴",
+        "官禄宫": "观察工作角色、投入方式与发展环境",
+        "财帛宫": "观察资源取得、配置与风险承受方式",
+        "夫妻宫": "观察亲密互动、协商方式与关系期待",
+        "迁移宫": "观察外部环境、变化场景与行动空间",
+        "福德宫": "观察内在节奏、恢复方式与精神关注",
+    }
+    palace_items = []
+    for palace in focus:
+        evidence = _ziwei_palace_evidence(palace)
+        palace_items.append({
+            "name": palace["name"],
+            "headline": palace_copy.get(palace["name"], "结合本宫与三方四正观察"),
+            "summary": f"{evidence[0]}。解读时同时参考{evidence[-1].replace('三方四正：', '')}，不以单星作结论。",
+            "evidence": evidence,
+        })
+    core_names = {item["name"] for item in focus}
+    other_palaces = []
+    for palace in chart.get("palaces", []):
+        if palace.get("name") in core_names:
+            continue
+        prepared = {**palace, "relatedPalaces": [palace.get("name"), palace.get("relations", {}).get("opposite"), *palace.get("relations", {}).get("triads", [])]}
+        evidence = _ziwei_palace_evidence(prepared)
+        other_palaces.append({
+            "name": palace.get("name"), "headline": "按需展开的宫位结构",
+            "summary": f"{evidence[0]}。此处只整理盘面结构，需结合具体问题与现实经历再解释。",
+            "evidence": evidence,
+        })
+    positive = [item for item in chart.get("transformations", []) if item.get("type") in {"化禄", "化权", "化科"}]
+    cautious = [item for item in chart.get("transformations", []) if item.get("type") == "化忌"]
+    strengths = [f"{item['palace']}见{item['star']}{item['type']}，可作为该宫位的重点观察线索。" for item in positive[:3]]
+    challenges = [f"{item['palace']}见{item['star']}{item['type']}，适合把相关议题拆成事实、感受与行动分别核对。" for item in cautious[:2]]
+    structures = chart.get("structures", [])
+    evidence = [f"{item.get('name')}：{'；'.join(item.get('evidence', []))}" for item in structures]
+    if not evidence:
+        evidence = ["本盘未命中当前规则集收录的特定格局标签；仍以十二宫、三方四正与四化为主。"]
+    interactions = timing.get("interactions", [])
+    timing_summary = (
+        f"{timing.get('targetYear')}年（{timing.get('annualPillar')}）虚岁{timing.get('nominalAge')}，"
+        f"流年命宫落{timing.get('annualMingPalace', {}).get('name')}。"
+        + ("叠加证据包括：" + "；".join(f"{item.get('palace')}{item.get('type')}" for item in interactions[:4]) + "。" if interactions else "三层四化未形成当前规则集定义的集中标签。")
+    )
+    actions = {
+        "整体": "选一个正在推进的目标，用命宫、官禄、财帛三个宫位分别记录现状、资源与下一步，并在一周后按现实反馈复核。",
+        "事业": "把当前职业选择拆成角色、能力、资源与外部机会四项，分别对照官禄、财帛、命宫与迁移宫证据，再设一个一周内可验证的小行动。",
+        "财运": "列出未来一个月的固定支出、可调整支出与风险预算；紫微证据只用于提示关注点，不替代财务数据。",
+        "关系": "挑选一个最近的互动场景，只讨论可观察事实、双方需要与可协商边界，不把宫位标签当作对他人的定论。",
+        "流年": "围绕当前大限与流年命宫，设定一个季度目标和两个复盘日期；以实际进展修正解释，不追逐单一吉凶标签。",
+    }
+    return {
+        "source": "local", "topic": topic,
+        "title": f"{topic}主题 · 十二宫结构观察",
+        "summary": f"命宫在{chart['core']['mingPalace']}，身宫在{chart['core']['shenPalace']}，属{chart['core']['bureau']}。以下先列确定性星曜、宫位与四化证据，再提供可由现实验证的观察方向。",
+        "evidence": evidence[:6], "strengths": strengths or ["先从命宫三方四正建立整体结构，不以孤立星曜下结论。"],
+        "challenges": challenges or ["当前规则没有单列化忌压力点，仍需结合现实处境检验。"],
+        "palaces": palace_items, "otherPalaces": other_palaces,
+        "timingSummary": timing_summary, "action": actions[topic],
+        "disclaimer": chart.get("disclaimer", "紫微斗数属于传统文化参考，不替代现实专业意见。"),
+    }
+
+
+def save_ziwei_reading(payload: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    profile_id = str(payload.get("historyId", "")).strip()[:40]
+    if not profile_id:
+        raise ValueError("请选择一份出生档案")
+    profile = get_chart_history_record(profile_id)
+    if profile is None:
+        raise ValueError("所选出生档案不存在，请重新选择")
+    topic = str(payload.get("topic", "整体")).strip()
+    if topic not in ZIWEI_TOPICS:
+        raise ValueError("紫微解读主题不在支持范围")
+    try:
+        target_year = int(payload.get("year") or datetime.now().year)
+    except (TypeError, ValueError):
+        raise ValueError("流年年份格式不正确") from None
+    chart, _chart_cached = calculate_ziwei_cached({"historyId": profile_id})
+    timing = ziwei_engine.timing_layers(chart, target_year)
+    identity = {
+        "profileId": profile_id, "chartId": chart["id"], "topic": topic,
+        "targetYear": target_year, "promptVersion": ZIWEI_PROMPT_VERSION,
+    }
+    cache_key = hashlib.sha256(json.dumps(identity, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    record_id = "z_" + cache_key[:20]
+    now = datetime.now().isoformat(timespec="seconds")
+    with state_connection() as connection:
+        existed = connection.execute("SELECT 1 FROM ziwei_readings WHERE cache_key=?", (cache_key,)).fetchone() is not None
+        connection.execute(
+            """
+            INSERT INTO ziwei_readings(
+                id, cache_key, profile_id, topic, target_year, chart, timing,
+                interpretation, created_at, updated_at
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, '{}', ?, ?)
+            ON CONFLICT(cache_key) DO UPDATE SET updated_at=excluded.updated_at
+            """,
+            (record_id, cache_key, profile_id, topic, target_year, json.dumps(chart, ensure_ascii=False), json.dumps(timing, ensure_ascii=False), now, now),
+        )
+        connection.execute(
+            "DELETE FROM ziwei_readings WHERE id IN (SELECT id FROM ziwei_readings ORDER BY updated_at DESC LIMIT -1 OFFSET 100)"
+        )
+    item = get_ziwei_reading(record_id)
+    if item is None:
+        raise ValueError("紫微报告保存失败")
+    return item, existed
+
+
+def list_ziwei_readings(profile_id: str = "") -> list[dict[str, Any]]:
+    query = "SELECT id, profile_id, topic, target_year, interpretation, created_at, updated_at FROM ziwei_readings"
+    params: tuple[Any, ...] = ()
+    if profile_id:
+        query += " WHERE profile_id=?"
+        params = (profile_id[:40],)
+    query += " ORDER BY updated_at DESC LIMIT 100"
+    with state_connection() as connection:
+        rows = connection.execute(query, params).fetchall()
+    items = []
+    for row in rows:
+        try:
+            interpretation = json.loads(row["interpretation"])
+        except json.JSONDecodeError:
+            interpretation = {}
+        profile = get_chart_history_record(row["profile_id"])
+        items.append({
+            "id": row["id"], "profileId": row["profile_id"], "profileName": (profile or {}).get("name") or "未命名资料",
+            "topic": row["topic"], "targetYear": row["target_year"],
+            "title": interpretation.get("title") or f"{row['topic']}主题 · 紫微报告",
+            "createdAt": row["created_at"], "updatedAt": row["updated_at"],
+        })
+    return items
+
+
+def get_ziwei_reading(record_id: str) -> dict[str, Any] | None:
+    with state_connection() as connection:
+        row = connection.execute(
+            "SELECT id, profile_id, topic, target_year, chart, timing, interpretation, created_at, updated_at FROM ziwei_readings WHERE id=?",
+            (record_id[:40],),
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        chart = json.loads(row["chart"]); timing = json.loads(row["timing"]); interpretation = json.loads(row["interpretation"])
+    except json.JSONDecodeError:
+        return None
+    profile = get_chart_history_record(row["profile_id"])
+    return {
+        "id": row["id"], "profileId": row["profile_id"], "profileName": (profile or {}).get("name") or "未命名资料",
+        "topic": row["topic"], "targetYear": row["target_year"], "chart": chart,
+        "timing": timing, "interpretation": interpretation,
+        "createdAt": row["created_at"], "updatedAt": row["updated_at"],
+    }
+
+
+def update_ziwei_interpretation(record_id: str, interpretation: dict[str, Any]) -> None:
+    with state_connection() as connection:
+        connection.execute(
+            "UPDATE ziwei_readings SET interpretation=?, updated_at=? WHERE id=?",
+            (json.dumps(interpretation, ensure_ascii=False), datetime.now().isoformat(timespec="seconds"), record_id[:40]),
+        )
+
+
+def delete_ziwei_reading(record_id: str) -> bool:
+    with state_connection() as connection:
+        cursor = connection.execute("DELETE FROM ziwei_readings WHERE id=?", (record_id[:40],))
+    return cursor.rowcount > 0
+
+
+def analyze_ziwei_record(record_id: str) -> tuple[dict[str, Any], bool]:
+    item = get_ziwei_reading(record_id)
+    if item is None:
+        raise ValueError("找不到这份紫微报告")
+    existing = item.get("interpretation")
+    if isinstance(existing, dict) and existing.get("title"):
+        return existing, True
+    chart, timing, topic = item["chart"], item["timing"], item["topic"]
+    fallback = local_ziwei_interpretation(chart, timing, topic)
+    with API_CONFIG_LOCK:
+        configured = bool(API_CONFIG.get("apiKey"))
+    if not configured:
+        update_ziwei_interpretation(record_id, fallback)
+        return fallback, False
+    compact = {
+        "topic": topic, "core": chart.get("core"), "palaces": chart.get("palaces"), "focusPalaces": chart.get("focusPalaces"),
+        "transformations": chart.get("transformations"), "structures": chart.get("structures"),
+        "timing": timing, "warnings": chart.get("warnings"),
+    }
+    messages = [
+        {"role": "system", "content": "你是玄衡的紫微斗数结构观察助手。只解释输入中的确定性宫位、星曜、庙旺、三方四正、四化与运限证据；不得增补星曜或格局，不得预测必然事件，不制造焦虑。先讲证据再给可验证建议，只返回合法 JSON。"},
+        {"role": "user", "content": f"""版本：{ZIWEI_PROMPT_VERSION}\n确定性紫微数据：{json.dumps(compact, ensure_ascii=False)}\n输出根字段必须且只能是 title、summary、evidence、strengths、challenges、palaces、otherPalaces、timingSummary、action、disclaimer。evidence、strengths、challenges 各 1—4 条。palaces 必须按命宫、官禄宫、财帛宫、夫妻宫、迁移宫、福德宫输出六项；otherPalaces 按兄弟、子女、疾厄、交友、田宅、父母六宫输出。每项含 name、headline、summary、evidence；不得把传统文化解释写成事实断言。"""},
+    ]
+    try:
+        raw = request_completion(messages)
+        generated_palaces = first_list(raw, "palaces", "宫位")
+        by_name = {str(p.get("name", p.get("宫位", ""))): p for p in generated_palaces if isinstance(p, dict)}
+        palaces = []
+        for fallback_palace in fallback["palaces"]:
+            source = by_name.get(fallback_palace["name"], {})
+            palaces.append({
+                "name": fallback_palace["name"],
+                "headline": first_text(source, "headline", "标题") or fallback_palace["headline"],
+                "summary": first_text(source, "summary", "解读") or fallback_palace["summary"],
+                "evidence": [str(value)[:240] for value in first_list(source, "evidence", "证据")[:5]] or fallback_palace["evidence"],
+            })
+        generated_other = first_list(raw, "otherPalaces", "其他宫位")
+        other_by_name = {str(p.get("name", p.get("宫位", ""))): p for p in generated_other if isinstance(p, dict)}
+        other_palaces = []
+        for fallback_palace in fallback["otherPalaces"]:
+            source = other_by_name.get(fallback_palace["name"], {})
+            other_palaces.append({
+                "name": fallback_palace["name"],
+                "headline": first_text(source, "headline", "标题") or fallback_palace["headline"],
+                "summary": first_text(source, "summary", "解读") or fallback_palace["summary"],
+                "evidence": [str(value)[:240] for value in first_list(source, "evidence", "证据")[:5]] or fallback_palace["evidence"],
+            })
+        result = {
+            "source": "model", "topic": topic,
+            "title": first_text(raw, "title", "标题") or fallback["title"],
+            "summary": first_text(raw, "summary", "概览") or fallback["summary"],
+            "evidence": [str(value)[:300] for value in first_list(raw, "evidence", "证据")[:6]] or fallback["evidence"],
+            "strengths": [str(value)[:300] for value in first_list(raw, "strengths", "优势")[:4]] or fallback["strengths"],
+            "challenges": [str(value)[:300] for value in first_list(raw, "challenges", "提醒")[:4]] or fallback["challenges"],
+            "palaces": palaces, "otherPalaces": other_palaces,
+            "timingSummary": first_text(raw, "timingSummary", "运限", "流年") or fallback["timingSummary"],
+            "action": first_text(raw, "action", "行动", "建议") or fallback["action"],
+            "disclaimer": first_text(raw, "disclaimer", "提示") or fallback["disclaimer"],
+        }
+    except ValueError as exc:
+        print(f"[ziwei] model fallback reason={type(exc).__name__}", flush=True)
+        result = {**fallback, "fallbackReason": "模型暂不可用，已使用确定性排盘证据生成基础报告"}
+    update_ziwei_interpretation(record_id, result)
+    return result, False
+
+
+def ziwei_markdown(item: dict[str, Any]) -> str:
+    chart, timing = item.get("chart", {}), item.get("timing", {})
+    interpretation = item.get("interpretation") or local_ziwei_interpretation(chart, timing, item.get("topic", "整体"))
+    lines = [
+        "# 玄衡紫微斗数报告", "", f"- 档案：{item.get('profileName', '未命名资料')}",
+        f"- 主题：{item.get('topic', '')}", f"- 目标流年：{item.get('targetYear', '')}",
+        f"- 规则版本：{chart.get('rulesetVersion', '')}", "", f"## {interpretation.get('title', '紫微结构报告')}", "",
+        str(interpretation.get("summary", "")), "", "## 结构证据", "",
+    ]
+    lines.extend(f"- {value}" for value in interpretation.get("evidence", []))
+    lines.extend(["", "## 六个核心宫位", ""])
+    for palace in interpretation.get("palaces", []):
+        lines.extend([f"### {palace.get('name', '')} · {palace.get('headline', '')}", "", str(palace.get("summary", ""))])
+        lines.extend(f"- {value}" for value in palace.get("evidence", []))
+        lines.append("")
+    lines.extend(["## 其余六宫（按需）", ""])
+    for palace in interpretation.get("otherPalaces", []):
+        lines.extend([f"### {palace.get('name', '')} · {palace.get('headline', '')}", "", str(palace.get("summary", ""))])
+        lines.extend(f"- {value}" for value in palace.get("evidence", []))
+        lines.append("")
+    lines.extend(["## 大限与流年", "", str(interpretation.get("timingSummary", "")), "", "## 可执行动作", "", str(interpretation.get("action", "")), "", "---", str(interpretation.get("disclaimer", ""))])
+    return "\n".join(lines) + "\n"
+
+
 def delete_chart_history(record_id: str) -> bool:
     with state_connection() as connection:
         connection.execute("DELETE FROM ziwei_chart_cache WHERE profile_id=?", (record_id,))
+        connection.execute("DELETE FROM ziwei_readings WHERE profile_id=?", (record_id,))
         connection.execute("DELETE FROM affinity_readings WHERE profile_a_id=? OR profile_b_id=?", (record_id, record_id))
         cursor = connection.execute("DELETE FROM chart_history WHERE id=?", (record_id,))
     return cursor.rowcount > 0
@@ -2571,14 +2879,31 @@ class Handler(SimpleHTTPRequestHandler):
                 {
                     "ok": True,
                     "available": True,
-                    "version": "V3.0",
+                    "version": "V3.2 RC",
                     "rulesetVersion": ziwei_engine.RULESET_VERSION,
                     "school": "三合派常用安星诀",
                     "source": "FANzR-arch/Numerologist_skills/ziwei-doushu",
-                    "capabilities": ["命身宫", "十二宫", "五行局", "十四主星", "核心辅煞", "生年四化", "大限", "命主身主", "三方四正", "庙旺状态"],
+                    "capabilities": ["命身宫", "十二宫", "五行局", "十四主星", "核心辅煞", "常用杂曜", "生年四化", "宫干飞化", "大限流年", "三层叠加证据", "六宫解读", "历史导出"],
                     "ruleNotes": {"lateZiDayChange": True, "leapMonthPolicy": "same_month_number"},
                 },
             )
+            return
+        if path == "/api/ziwei/history":
+            query = urllib.parse.parse_qs(parsed.query)
+            record_id = query.get("id", [""])[0]
+            if record_id:
+                item = get_ziwei_reading(record_id)
+                self.send_json(HTTPStatus.OK if item else HTTPStatus.NOT_FOUND, {"ok": bool(item), "item": item, "error": None if item else "记录不存在"})
+            else:
+                self.send_json(HTTPStatus.OK, {"ok": True, "items": list_ziwei_readings(query.get("profileId", [""])[0])})
+            return
+        if path == "/api/ziwei/export":
+            record_id = urllib.parse.parse_qs(parsed.query).get("id", [""])[0]
+            item = get_ziwei_reading(record_id)
+            if item is None:
+                self.send_json(HTTPStatus.NOT_FOUND, {"ok": False, "error": "记录不存在"})
+            else:
+                self.send_text(HTTPStatus.OK, ziwei_markdown(item), f"xuanheng-ziwei-{record_id}.md")
             return
         if path == "/api/acceptance-report":
             session_id = urllib.parse.parse_qs(parsed.query).get("session", [""])[0] or None
@@ -2613,6 +2938,10 @@ class Handler(SimpleHTTPRequestHandler):
             record_id = urllib.parse.parse_qs(parsed.query).get("id", [""])[0]
             self.send_json(HTTPStatus.OK, {"ok": True, "deleted": delete_affinity_reading(record_id)})
             return
+        if parsed.path == "/api/ziwei/history":
+            record_id = urllib.parse.parse_qs(parsed.query).get("id", [""])[0]
+            self.send_json(HTTPStatus.OK, {"ok": True, "deleted": delete_ziwei_reading(record_id)})
+            return
         self.send_json(HTTPStatus.NOT_FOUND, {"error": "接口不存在"})
 
     def do_POST(self) -> None:  # noqa: N802
@@ -2621,7 +2950,8 @@ class Handler(SimpleHTTPRequestHandler):
             "/api/chart", "/api/geocode", "/api/settings", "/api/analyze",
             "/api/calendar-convert", "/api/calendar-options", "/api/pillar-dates",
             "/api/acceptance-event", "/api/timing-data", "/api/tarot/draw", "/api/tarot/interpret",
-            "/api/ziwei/chart", "/api/ziwei/timing", "/api/affinity/calculate", "/api/affinity/interpret",
+            "/api/ziwei/chart", "/api/ziwei/timing", "/api/ziwei/report", "/api/ziwei/interpret",
+            "/api/affinity/calculate", "/api/affinity/interpret",
         }:
             self.send_json(HTTPStatus.NOT_FOUND, {"error": "接口不存在"})
             return
@@ -2766,6 +3096,24 @@ class Handler(SimpleHTTPRequestHandler):
                     HTTPStatus.OK,
                     {"ok": True, "chartId": chart["id"], "timing": timing, "chartCached": cached},
                 )
+                return
+
+            if path == "/api/ziwei/report":
+                item, cached = save_ziwei_reading(payload)
+                interpretation, interpretation_cached = analyze_ziwei_record(item["id"])
+                refreshed = get_ziwei_reading(item["id"])
+                self.send_json(
+                    HTTPStatus.OK,
+                    {"ok": True, "item": refreshed, "cached": cached, "interpretationCached": interpretation_cached, "interpretation": interpretation},
+                )
+                return
+
+            if path == "/api/ziwei/interpret":
+                record_id = str(payload.get("id", ""))[:40]
+                if not record_id:
+                    raise ValueError("缺少紫微报告 ID")
+                interpretation, cached = analyze_ziwei_record(record_id)
+                self.send_json(HTTPStatus.OK, {"ok": True, "interpretation": interpretation, "cached": cached})
                 return
 
             if path == "/api/analyze":

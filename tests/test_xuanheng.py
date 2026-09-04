@@ -93,7 +93,7 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertEqual(chart["core"]["ziweiPalace"], "寅")
         self.assertEqual(chart["core"]["tianfuPalace"], "寅")
         self.assertEqual(len(chart["palaces"]), 12)
-        self.assertEqual(set(chart["starLocations"]), set(ziwei_engine.MAIN_STARS + ziwei_engine.ASSISTANT_STARS))
+        self.assertEqual(set(chart["starLocations"]), set(ziwei_engine.MAIN_STARS + ziwei_engine.ASSISTANT_STARS + ziwei_engine.SECONDARY_STARS))
         self.assertEqual(
             [(item["type"], item["star"]) for item in chart["transformations"]],
             [("化禄", "天梁"), ("化权", "紫微"), ("化科", "左辅"), ("化忌", "武曲")],
@@ -101,6 +101,9 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertTrue(chart["selfCheck"]["passed"])
         self.assertEqual(len(chart["focusPalaces"]), 6)
         self.assertIsInstance(chart["structures"], list)
+        self.assertEqual(len(chart["palaceFlyingTransformations"]), 12)
+        self.assertTrue(all(len(item["transformations"]) == 4 for item in chart["palaceFlyingTransformations"]))
+        self.assertEqual(sum(len(item["secondaryStars"]) for item in chart["palaces"]), len(ziwei_engine.SECONDARY_STARS))
 
         timing = ziwei_engine.timing_layers(chart, 2026)
         self.assertEqual(timing["annualPillar"], "丙午")
@@ -108,6 +111,7 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertEqual(len(timing["decadeYears"]), 10)
         self.assertEqual([layer["name"] for layer in timing["layers"]], ["本命", "大限", "流年"])
         self.assertTrue(all(len(layer["transformations"]) == 4 for layer in timing["layers"]))
+        self.assertIsInstance(timing["interactions"], list)
 
     def test_ziwei_position_matches_upstream_rule(self):
         for bureau in range(2, 7):
@@ -150,6 +154,10 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertIn('data-system-route="ziwei"', html)
         self.assertIn('/api/ziwei/chart', html)
         self.assertIn('/api/ziwei/timing', html)
+        self.assertIn('/api/ziwei/report', html)
+        self.assertIn('/api/ziwei/history', html)
+        self.assertIn('id="ziwei-reading-section"', html)
+        self.assertIn('id="ziwei-history-section"', html)
         self.assertNotIn('data-coming="紫微斗数"', html)
         self.assertNotIn('确定性引擎待接入', html)
         self.assertIn('.ziwei-loading[hidden]', theme)
@@ -159,6 +167,47 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertIn('#app-page.shell{width:100%;min-height:100vh;margin:0;grid-template-rows:auto minmax(0,1fr);overflow:visible;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}', theme)
         self.assertIn('.home-coordinate b{color:rgba(210,173,104,.42);font-size:44px}', theme)
         self.assertIn('.home-launch{margin-top:72px;padding:42px', theme)
+
+    def test_ziwei_report_is_cached_reopenable_exportable_and_deletable(self):
+        now = "2026-09-04T12:00:00"
+        record_id = "3" * 20
+        with server.state_connection() as connection:
+            connection.execute(
+                """INSERT INTO chart_history(
+                    id, fingerprint, name, sex, calendar, birth_date, birth_time,
+                    accuracy, place, leap, time_mode, timezone_offset, timezone_label,
+                    longitude, latitude, pillars, dayun_direction, dayun_start, created_at, updated_at
+                ) VALUES(?, ?, '校验样例', '女', 'solar', '2002-06-15', '11:30', '时间准确',
+                         '眉山市', 0, 'standard', 8, '北京（UTC+8）', '', '',
+                         '壬午/丙午/甲寅/己巳', '逆排', '3岁1个月', ?, ?)""",
+                (record_id, "c" * 64, now, now),
+            )
+        item, cached = server.save_ziwei_reading({"historyId": record_id, "topic": "事业", "year": 2026})
+        self.assertFalse(cached)
+        same, cached = server.save_ziwei_reading({"historyId": record_id, "topic": "事业", "year": 2026})
+        self.assertTrue(cached)
+        self.assertEqual(same["id"], item["id"])
+        with server.API_CONFIG_LOCK:
+            original = dict(server.API_CONFIG)
+            server.API_CONFIG.clear()
+        try:
+            interpretation, interpretation_cached = server.analyze_ziwei_record(item["id"])
+            self.assertFalse(interpretation_cached)
+            self.assertEqual(interpretation["source"], "local")
+            self.assertEqual(len(interpretation["palaces"]), 6)
+            self.assertEqual(len(interpretation["otherPalaces"]), 6)
+            reopened, interpretation_cached = server.analyze_ziwei_record(item["id"])
+            self.assertTrue(interpretation_cached)
+            self.assertEqual(reopened, interpretation)
+        finally:
+            with server.API_CONFIG_LOCK:
+                server.API_CONFIG.clear()
+                server.API_CONFIG.update(original)
+        saved = server.get_ziwei_reading(item["id"])
+        self.assertIn("玄衡紫微斗数报告", server.ziwei_markdown(saved))
+        self.assertEqual(len(server.list_ziwei_readings(record_id)), 1)
+        self.assertTrue(server.delete_ziwei_reading(item["id"]))
+        self.assertIsNone(server.get_ziwei_reading(item["id"]))
 
     def test_affinity_engine_is_deterministic_and_evidence_based(self):
         first = {"id": "first", "name": "甲", "pillars": "壬午/丙午/甲寅/己巳"}
