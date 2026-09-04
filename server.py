@@ -51,7 +51,7 @@ KEYCHAIN_ACCOUNT = getpass.getuser()
 ANALYSIS_PROMPT_VERSION = "2026-09-03-history-v3"
 TAROT_PROMPT_VERSION = "2026-09-03-tarot-v1"
 AFFINITY_PROMPT_VERSION = "2026-09-03-affinity-v1"
-ZIWEI_PROMPT_VERSION = "2026-09-04-ziwei-v1"
+ZIWEI_PROMPT_VERSION = "2026-09-04-ziwei-v2"
 ANALYSIS_REFERENCE_FILES = (
     ROOT / "vendor" / "bazi-skill" / "references" / "classical-texts.md",
     ROOT / "vendor" / "bazi-skill" / "references" / "wuxing-tables.md",
@@ -108,7 +108,6 @@ ACCEPTANCE_EVENT_DEFINITIONS: dict[str, dict[str, Any]] = {
     "ziwei_timing_viewed": {"title": "切换紫微流年与三层四化", "category": "紫微斗数", "weight": 3, "required": True},
     "ziwei_reading_generated": {"title": "生成紫微结构化解读", "category": "紫微斗数", "weight": 4, "required": True},
     "ziwei_reading_opened": {"title": "重新打开紫微报告", "category": "紫微斗数", "weight": 3, "required": True},
-    "ziwei_reading_exported": {"title": "导出紫微报告", "category": "紫微斗数", "weight": 2, "required": True},
     "affinity_completed": {"title": "完成一次双档案合缘计算", "category": "合缘", "weight": 5, "required": True},
     "affinity_history_opened": {"title": "重新打开合缘结果", "category": "合缘", "weight": 3, "required": True},
     "affinity_exported": {"title": "导出合缘结果", "category": "合缘", "weight": 2, "required": True},
@@ -718,6 +717,77 @@ def calculate_ziwei_cached(payload: dict[str, Any]) -> tuple[dict[str, Any], boo
 
 ZIWEI_TOPICS = {"整体", "事业", "财运", "关系", "流年"}
 
+# 依据上游 stars.md 中十四主星的官禄宫含义做现代职业语义映射。
+# 这些词只用于生成可验证的发展方向，不改变排盘，也不作为职业定论。
+ZIWEI_CAREER_GUIDE: dict[str, dict[str, Any]] = {
+    "紫微": {"directions": ["组织管理", "资源统筹", "创业与负责人角色"], "mode": "在需要定方向、整合资源和承担责任的位置发挥", "environment": "权责清楚、允许主导并能形成长期影响的平台"},
+    "天机": {"directions": ["策略规划", "咨询顾问", "产品与方案设计"], "mode": "以分析变化、拆解问题和持续迭代方案发挥", "environment": "问题复杂、信息流动快且允许试验调整的团队"},
+    "太阳": {"directions": ["教育传播", "公共服务", "品牌与对外沟通"], "mode": "通过公开表达、连接他人和承担公共责任发挥", "environment": "面向人群、强调协作与社会价值的组织"},
+    "武曲": {"directions": ["金融与财务", "工程技术", "运营与执行管理"], "mode": "以数字、效率、执行和资源控制形成成果", "environment": "目标清楚、结果可衡量、专业标准明确的体系"},
+    "天同": {"directions": ["稳定型专业岗位", "服务支持", "文化与生活方式领域"], "mode": "以耐心、协作和改善体验持续积累", "environment": "节奏稳定、关系友善、重视长期服务质量的团队"},
+    "廉贞": {"directions": ["法律与规则事务", "公共关系", "内容与表演创意"], "mode": "在复杂人际、规则边界和表达议题中协调推进", "environment": "需要判断分寸、处理多方关系并保留变化空间的平台"},
+    "天府": {"directions": ["经营管理", "财务与资产管理", "行政与供应运营"], "mode": "通过稳健配置、维护秩序和长期经营发挥", "environment": "资源稳定、流程成熟、重视可靠交付的组织"},
+    "太阴": {"directions": ["设计与审美", "研究与幕后策划", "地产与空间相关"], "mode": "以细节洞察、长期积累和精细表达形成价值", "environment": "允许深度工作、重视品质并有稳定节奏的团队"},
+    "贪狼": {"directions": ["销售与商务", "媒体与内容", "创意娱乐与社群运营"], "mode": "通过社交连接、快速学习和多元表达开拓机会", "environment": "接触面广、变化快、允许跨界尝试的平台"},
+    "巨门": {"directions": ["研究分析", "法律与规则解释", "教育咨询与内容表达"], "mode": "靠调查、论证、提问和专业表达解决复杂问题", "environment": "重视证据、允许讨论且以知识输出创造价值的岗位"},
+    "天相": {"directions": ["项目协调", "行政与人力", "外交与客户成功"], "mode": "通过协调资源、维护标准和支持关键角色推进", "environment": "制度清晰、协作密集、重视服务与专业形象的平台"},
+    "天梁": {"directions": ["法律与公共事务", "教育咨询", "医疗健康与公益服务"], "mode": "以经验判断、风险化解和专业照护建立信任", "environment": "重视伦理、长期信誉和公共价值的专业组织"},
+    "七杀": {"directions": ["开创型业务", "危机与项目攻坚", "竞技和高执行岗位"], "mode": "在高目标、强变化和需要快速决断的任务中发挥", "environment": "授权明确、挑战真实、能按成果承担责任的团队"},
+    "破军": {"directions": ["创新研发", "产品转型", "改革与创业项目"], "mode": "通过拆旧建新、重组流程和探索新路径形成突破", "environment": "允许试错、需要变革并能承受阶段性不确定的平台"},
+}
+
+
+def _ziwei_development_judgment(chart: dict[str, Any]) -> dict[str, Any]:
+    palace_by_name = {palace.get("name"): palace for palace in chart.get("palaces", [])}
+    career = palace_by_name.get("官禄宫", {})
+    related_names = ["官禄宫", "命宫", "财帛宫", "迁移宫"]
+    ranked_stars: list[tuple[str, str, str]] = []
+    for palace_name in related_names:
+        for star in palace_by_name.get(palace_name, {}).get("mainStars", []):
+            name = star.get("name", "")
+            if name in ZIWEI_CAREER_GUIDE and all(existing[0] != name for existing in ranked_stars):
+                ranked_stars.append((name, star.get("brightness", ""), palace_name))
+    primary = ranked_stars[0] if ranked_stars else ("", "", "官禄宫")
+    guides = [ZIWEI_CAREER_GUIDE[name] for name, _brightness, _palace in ranked_stars[:3]]
+    directions: list[str] = []
+    for guide in guides:
+        for direction in guide["directions"]:
+            if direction not in directions:
+                directions.append(direction)
+    if not directions:
+        directions = ["先以现实经历、已有能力和可验证机会确定方向"]
+    primary_guide = ZIWEI_CAREER_GUIDE.get(primary[0], {})
+    career_evidence = []
+    if career.get("mainStars"):
+        career_evidence.append("官禄宫主星：" + "、".join(f"{star.get('name')}（{star.get('brightness')}）" for star in career["mainStars"]))
+    else:
+        career_evidence.append("官禄宫无十四主星，方向判断借命宫、财帛宫与迁移宫共同观察")
+    if career.get("assistantStars"):
+        career_evidence.append("官禄宫辅煞：" + "、".join(career["assistantStars"]))
+    if career.get("transformations"):
+        career_evidence.append("官禄宫生年四化：" + "、".join(f"{item.get('star')}{item.get('type')}" for item in career["transformations"]))
+    support = [f"{palace}见{name}（{brightness}）" for name, brightness, palace in ranked_stars[1:4]]
+    if support:
+        career_evidence.append("命财迁辅助证据：" + "；".join(support))
+    watch = "把方向当作候选假设，先用实际项目、反馈和收入结构验证。"
+    if primary[1] in {"落陷", "不得地"}:
+        watch = f"{primary[0]}在官禄结构中力量偏弱，适合用流程、合作与阶段复盘补足，不宜只靠临场发挥。"
+    if any(item.get("type") == "化忌" for item in career.get("transformations", [])):
+        watch = "官禄宫见化忌，代表对事业投入与压力感可能同时偏高；应先设边界、验证成本，再扩大承诺。"
+    if primary[0]:
+        conclusion = f"官禄宫以{primary[0]}为主要线索，优先探索“{'、'.join(directions[:4])}”这类方向。"
+    else:
+        conclusion = "官禄宫需借三方四正判断，先从命宫、财帛宫与迁移宫共同支持的能力场景中筛选方向。"
+    return {
+        "title": "事业与发展方向",
+        "conclusion": conclusion,
+        "directions": directions[:6],
+        "workMode": primary_guide.get("mode", "以可观察的优势、现实资源和反馈循环逐步确认发挥方式"),
+        "environment": primary_guide.get("environment", "能提供真实任务、清楚反馈与成长空间的环境"),
+        "watch": watch,
+        "evidence": career_evidence,
+    }
+
 
 def _ziwei_palace_evidence(palace: dict[str, Any]) -> list[str]:
     evidence: list[str] = []
@@ -795,6 +865,7 @@ def local_ziwei_interpretation(chart: dict[str, Any], timing: dict[str, Any], to
         "summary": f"命宫在{chart['core']['mingPalace']}，身宫在{chart['core']['shenPalace']}，属{chart['core']['bureau']}。以下先列确定性星曜、宫位与四化证据，再提供可由现实验证的观察方向。",
         "evidence": evidence[:6], "strengths": strengths or ["先从命宫三方四正建立整体结构，不以孤立星曜下结论。"],
         "challenges": challenges or ["当前规则没有单列化忌压力点，仍需结合现实处境检验。"],
+        "development": _ziwei_development_judgment(chart),
         "palaces": palace_items, "otherPalaces": other_palaces,
         "timingSummary": timing_summary, "action": actions[topic],
         "disclaimer": chart.get("disclaimer", "紫微斗数属于传统文化参考，不替代现实专业意见。"),
@@ -882,6 +953,20 @@ def get_ziwei_reading(record_id: str) -> dict[str, Any] | None:
         chart = json.loads(row["chart"]); timing = json.loads(row["timing"]); interpretation = json.loads(row["interpretation"])
     except json.JSONDecodeError:
         return None
+    fallback = local_ziwei_interpretation(chart, timing, row["topic"])
+    if interpretation.get("title"):
+        for key in ("evidence", "strengths", "challenges", "palaces", "otherPalaces"):
+            if not interpretation.get(key):
+                interpretation[key] = fallback[key]
+        for key in ("summary", "timingSummary", "action", "disclaimer"):
+            if not interpretation.get(key):
+                interpretation[key] = fallback[key]
+        # 发展方向始终由确定性盘面规则生成，旧报告打开时也自动补齐。
+        interpretation["development"] = fallback["development"]
+    else:
+        # 早期模型失败可能留下仅有盘面、尚无解读正文的历史记录。
+        # 打开历史时直接展示同一盘面生成的本地报告，不触发模型或改写记录。
+        interpretation = fallback
     profile = get_chart_history_record(row["profile_id"])
     return {
         "id": row["id"], "profileId": row["profile_id"], "profileName": (profile or {}).get("name") or "未命名资料",
@@ -906,11 +991,19 @@ def delete_ziwei_reading(record_id: str) -> bool:
 
 
 def analyze_ziwei_record(record_id: str) -> tuple[dict[str, Any], bool]:
+    with state_connection() as connection:
+        row = connection.execute(
+            "SELECT interpretation FROM ziwei_readings WHERE id=?", (record_id[:40],)
+        ).fetchone()
+    try:
+        stored_interpretation = json.loads(row["interpretation"]) if row else {}
+    except json.JSONDecodeError:
+        stored_interpretation = {}
     item = get_ziwei_reading(record_id)
     if item is None:
         raise ValueError("找不到这份紫微报告")
     existing = item.get("interpretation")
-    if isinstance(existing, dict) and existing.get("title"):
+    if isinstance(stored_interpretation, dict) and stored_interpretation.get("title"):
         return existing, True
     chart, timing, topic = item["chart"], item["timing"], item["topic"]
     fallback = local_ziwei_interpretation(chart, timing, topic)
@@ -926,7 +1019,7 @@ def analyze_ziwei_record(record_id: str) -> tuple[dict[str, Any], bool]:
     }
     messages = [
         {"role": "system", "content": "你是玄衡的紫微斗数结构观察助手。只解释输入中的确定性宫位、星曜、庙旺、三方四正、四化与运限证据；不得增补星曜或格局，不得预测必然事件，不制造焦虑。先讲证据再给可验证建议，只返回合法 JSON。"},
-        {"role": "user", "content": f"""版本：{ZIWEI_PROMPT_VERSION}\n确定性紫微数据：{json.dumps(compact, ensure_ascii=False)}\n输出根字段必须且只能是 title、summary、evidence、strengths、challenges、palaces、otherPalaces、timingSummary、action、disclaimer。evidence、strengths、challenges 各 1—4 条。palaces 必须按命宫、官禄宫、财帛宫、夫妻宫、迁移宫、福德宫输出六项；otherPalaces 按兄弟、子女、疾厄、交友、田宅、父母六宫输出。每项含 name、headline、summary、evidence；不得把传统文化解释写成事实断言。"""},
+        {"role": "user", "content": f"""版本：{ZIWEI_PROMPT_VERSION}\n确定性紫微数据：{json.dumps(compact, ensure_ascii=False)}\n输出根字段必须且只能是 title、summary、evidence、strengths、challenges、palaces、otherPalaces、timingSummary、action、disclaimer。evidence、strengths、challenges 各 1—4 条。palaces 必须按命宫、官禄宫、财帛宫、夫妻宫、迁移宫、福德宫输出六项；otherPalaces 按兄弟、子女、疾厄、交友、田宅、父母六宫输出。每项含 name、headline、summary、evidence；不得把传统文化解释写成事实断言。事业发展方向由服务端确定性规则另行生成，禁止自行补充行业断语。"""},
     ]
     try:
         raw = request_completion(messages)
@@ -959,6 +1052,7 @@ def analyze_ziwei_record(record_id: str) -> tuple[dict[str, Any], bool]:
             "evidence": [str(value)[:300] for value in first_list(raw, "evidence", "证据")[:6]] or fallback["evidence"],
             "strengths": [str(value)[:300] for value in first_list(raw, "strengths", "优势")[:4]] or fallback["strengths"],
             "challenges": [str(value)[:300] for value in first_list(raw, "challenges", "提醒")[:4]] or fallback["challenges"],
+            "development": fallback["development"],
             "palaces": palaces, "otherPalaces": other_palaces,
             "timingSummary": first_text(raw, "timingSummary", "运限", "流年") or fallback["timingSummary"],
             "action": first_text(raw, "action", "行动", "建议") or fallback["action"],
@@ -969,30 +1063,6 @@ def analyze_ziwei_record(record_id: str) -> tuple[dict[str, Any], bool]:
         result = {**fallback, "fallbackReason": "模型暂不可用，已使用确定性排盘证据生成基础报告"}
     update_ziwei_interpretation(record_id, result)
     return result, False
-
-
-def ziwei_markdown(item: dict[str, Any]) -> str:
-    chart, timing = item.get("chart", {}), item.get("timing", {})
-    interpretation = item.get("interpretation") or local_ziwei_interpretation(chart, timing, item.get("topic", "整体"))
-    lines = [
-        "# 玄衡紫微斗数报告", "", f"- 档案：{item.get('profileName', '未命名资料')}",
-        f"- 主题：{item.get('topic', '')}", f"- 目标流年：{item.get('targetYear', '')}",
-        f"- 规则版本：{chart.get('rulesetVersion', '')}", "", f"## {interpretation.get('title', '紫微结构报告')}", "",
-        str(interpretation.get("summary", "")), "", "## 结构证据", "",
-    ]
-    lines.extend(f"- {value}" for value in interpretation.get("evidence", []))
-    lines.extend(["", "## 六个核心宫位", ""])
-    for palace in interpretation.get("palaces", []):
-        lines.extend([f"### {palace.get('name', '')} · {palace.get('headline', '')}", "", str(palace.get("summary", ""))])
-        lines.extend(f"- {value}" for value in palace.get("evidence", []))
-        lines.append("")
-    lines.extend(["## 其余六宫（按需）", ""])
-    for palace in interpretation.get("otherPalaces", []):
-        lines.extend([f"### {palace.get('name', '')} · {palace.get('headline', '')}", "", str(palace.get("summary", ""))])
-        lines.extend(f"- {value}" for value in palace.get("evidence", []))
-        lines.append("")
-    lines.extend(["## 大限与流年", "", str(interpretation.get("timingSummary", "")), "", "## 可执行动作", "", str(interpretation.get("action", "")), "", "---", str(interpretation.get("disclaimer", ""))])
-    return "\n".join(lines) + "\n"
 
 
 def delete_chart_history(record_id: str) -> bool:
@@ -2883,7 +2953,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "rulesetVersion": ziwei_engine.RULESET_VERSION,
                     "school": "三合派常用安星诀",
                     "source": "FANzR-arch/Numerologist_skills/ziwei-doushu",
-                    "capabilities": ["命身宫", "十二宫", "五行局", "十四主星", "核心辅煞", "常用杂曜", "生年四化", "宫干飞化", "大限流年", "三层叠加证据", "六宫解读", "历史导出"],
+                    "capabilities": ["命身宫", "十二宫", "五行局", "十四主星", "核心辅煞", "常用杂曜", "生年四化", "宫干飞化", "大限流年", "三层叠加证据", "十二宫解读", "发展方向判断", "历史重开"],
                     "ruleNotes": {"lateZiDayChange": True, "leapMonthPolicy": "same_month_number"},
                 },
             )
@@ -2896,14 +2966,6 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json(HTTPStatus.OK if item else HTTPStatus.NOT_FOUND, {"ok": bool(item), "item": item, "error": None if item else "记录不存在"})
             else:
                 self.send_json(HTTPStatus.OK, {"ok": True, "items": list_ziwei_readings(query.get("profileId", [""])[0])})
-            return
-        if path == "/api/ziwei/export":
-            record_id = urllib.parse.parse_qs(parsed.query).get("id", [""])[0]
-            item = get_ziwei_reading(record_id)
-            if item is None:
-                self.send_json(HTTPStatus.NOT_FOUND, {"ok": False, "error": "记录不存在"})
-            else:
-                self.send_text(HTTPStatus.OK, ziwei_markdown(item), f"xuanheng-ziwei-{record_id}.md")
             return
         if path == "/api/acceptance-report":
             session_id = urllib.parse.parse_qs(parsed.query).get("session", [""])[0] or None

@@ -149,9 +149,6 @@ body.question-history-open{overflow:hidden}
 
 /* 紫微斗数完整模块：命盘、解读、运限和历史共用同一视觉语法。 */
 .ziwei-report[hidden],.ziwei-report-loading[hidden],.ziwei-report-empty[hidden]{display:none!important}
-.ziwei-feature-nav button{min-height:38px;padding:0 14px;border:0;border-radius:5px;background:transparent;color:#8f949a;font:inherit;white-space:nowrap;cursor:pointer}
-.ziwei-feature-nav button:hover{color:var(--ink)}
-.ziwei-feature-nav button.active{background:var(--gold);color:#111318}
 .ziwei-secondary{margin-top:5px;color:#b7a481;font-size:10px;line-height:1.55}
 .ziwei-reading-section,.ziwei-history{scroll-margin-top:112px;padding:22px;border:1px solid var(--line);border-radius:12px;background:rgba(23,26,31,.94);box-shadow:var(--shadow)}
 .ziwei-reading-head,.ziwei-history-head{display:flex;align-items:end;justify-content:space-between;gap:22px}
@@ -172,7 +169,19 @@ body.question-history-open{overflow:hidden}
 .ziwei-report-title{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:20px;border-left:2px solid var(--gold);background:#111419}
 .ziwei-report-title h3{margin:7px 0 7px;font:30px var(--serif)}
 .ziwei-report-title p{max-width:780px;margin:0;color:#a4a7aa;line-height:1.75}
-.ziwei-report-title>a{flex:none;padding:8px 10px;border:1px solid var(--line);border-radius:5px;color:var(--gold);font-size:11px;text-decoration:none}
+.ziwei-development{padding:20px;border:1px solid rgba(210,173,104,.35);border-radius:8px;background:linear-gradient(120deg,rgba(210,173,104,.12),rgba(35,73,85,.12)),#171a1f}
+.ziwei-development>small{color:var(--gold);font-size:9px;letter-spacing:.14em}
+.ziwei-development h4{margin:8px 0 7px;font:26px var(--serif)}
+.ziwei-development-lead{max-width:860px;margin:0;color:#c2c0bb;font-size:14px;line-height:1.75}
+.ziwei-direction-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}
+.ziwei-direction-tags span{padding:7px 10px;border:1px solid rgba(210,173,104,.3);border-radius:99px;background:#111419;color:var(--ink);font-size:11px}
+.ziwei-development dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:15px 0 0}
+.ziwei-development dl>div{padding:12px;border:1px solid var(--line);border-radius:6px;background:rgba(13,16,20,.7)}
+.ziwei-development dt{color:var(--gold);font-size:10px}
+.ziwei-development dd{margin:6px 0 0;color:#aeb0b2;font-size:11px;line-height:1.65}
+.ziwei-development details{margin-top:12px;color:#9ca0a5;font-size:10px}
+.ziwei-development summary{color:var(--gold);cursor:pointer}
+.ziwei-no-copy{margin:10px 0 0;color:#7f8389;font-size:11px}
 .ziwei-report-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 .ziwei-report-columns article,.ziwei-palace-readings article,.ziwei-report-conclusion>div{padding:16px;border:1px solid var(--line);border-radius:7px;background:#20242a}
 .ziwei-report ul{display:grid;gap:7px;margin:10px 0 0;padding-left:16px;color:#b0b2b4;font-size:11px;line-height:1.65}
@@ -205,9 +214,9 @@ body.question-history-open{overflow:hidden}
 @media(max-width:900px){
   .ziwei-reading-head,.ziwei-history-head{align-items:flex-start;flex-direction:column}
   .ziwei-report-columns,.ziwei-palace-readings{grid-template-columns:1fr}
+  .ziwei-development dl{grid-template-columns:1fr}
 }
 @media(max-width:720px){
-  .ziwei-feature-nav{display:flex}
   .ziwei-reading-section,.ziwei-history{padding:16px}
   .ziwei-reading-controls{width:100%;align-items:stretch;flex-direction:column}
   .ziwei-report-title,.ziwei-history-entry{align-items:flex-start;flex-direction:column}

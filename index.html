@@ -1332,7 +1332,6 @@
   <section class="site-page ziwei-page" id="ziwei-page" data-page="ziwei" aria-hidden="true">
     <header class="site-header internal-header">
       <a class="brand brand-home" href="#/home" data-route="home" aria-label="返回玄衡主页"><span class="seal">玄</span><span><strong>玄衡</strong><small>返回主页</small></span></a>
-      <nav class="feature-nav ziwei-feature-nav" aria-label="紫微功能"><button class="active" type="button" data-ziwei-jump="ziwei-chart-section">紫微命盘</button><button type="button" data-ziwei-jump="ziwei-reading-section">命盘解读</button><button type="button" data-ziwei-jump="ziwei-timing-section">大限流年</button><button type="button" data-ziwei-jump="ziwei-history-section">历史报告</button></nav>
       <a class="profile-link" href="#/profile" data-route="profile">共用出生档案 ↗</a>
     </header>
     <main class="ziwei-main">
@@ -3251,8 +3250,13 @@
       ziweiState.currentId = item?.id || ziweiState.currentId;
       if (ziweiState.currentId) localStorage.setItem("xuanhengZiweiReading", ziweiState.currentId);
       const sourceLabel = interpretation.source === "model" ? "模型基于排盘证据生成" : "本地确定性基础报告";
-      const list = values => `<ul>${(values || []).map(value => `<li>${escapeHtml(value)}</li>`).join("")}</ul>`;
-      document.getElementById("ziwei-report").innerHTML = `<div class="ziwei-report-title"><div><small>${escapeHtml(sourceLabel)} · ${escapeHtml(interpretation.topic || item?.topic || "整体")}</small><h3>${escapeHtml(interpretation.title || "紫微结构报告")}</h3><p>${escapeHtml(interpretation.summary || "")}</p></div>${ziweiState.currentId ? `<a href="${apiUrl(`/api/ziwei/export?id=${encodeURIComponent(ziweiState.currentId)}`)}" data-ziwei-export>导出 Markdown ↗</a>` : ""}</div><div class="ziwei-report-columns"><article><small>STRUCTURE · 结构证据</small>${list(interpretation.evidence)}</article><article><small>SUPPORT · 可利用线索</small>${list(interpretation.strengths)}</article><article><small>CHECK · 需复核线索</small>${list(interpretation.challenges)}</article></div><div class="ziwei-palace-readings">${(interpretation.palaces || []).map(palace => `<article><small>${escapeHtml(palace.name || "宫位")}</small><h4>${escapeHtml(palace.headline || "")}</h4><p>${escapeHtml(palace.summary || "")}</p>${list(palace.evidence)}</article>`).join("")}</div>${interpretation.otherPalaces?.length ? `<details class="ziwei-other-palaces"><summary>展开其余六宫</summary><div class="ziwei-palace-readings">${interpretation.otherPalaces.map(palace => `<article><small>${escapeHtml(palace.name || "宫位")}</small><h4>${escapeHtml(palace.headline || "")}</h4><p>${escapeHtml(palace.summary || "")}</p>${list(palace.evidence)}</article>`).join("")}</div></details>` : ""}<div class="ziwei-report-conclusion"><div><small>DECADE &amp; ANNUAL</small><h4>大限与流年</h4><p>${escapeHtml(interpretation.timingSummary || "")}</p></div><div><small>NEXT ACTION</small><h4>下一步</h4><p>${escapeHtml(interpretation.action || "")}</p></div></div><p class="ziwei-report-disclaimer">${escapeHtml(interpretation.disclaimer || "")}</p>`;
+      const list = values => {
+        const normalized = Array.isArray(values) ? values : (values ? [values] : []);
+        return normalized.length ? `<ul>${normalized.map(value => `<li>${escapeHtml(typeof value === "string" ? value : value?.text || value?.summary || "")}</li>`).join("")}</ul>` : `<p class="ziwei-no-copy">暂无可展示内容</p>`;
+      };
+      const development = interpretation.development || {};
+      const directionTags = Array.isArray(development.directions) ? development.directions : [];
+      document.getElementById("ziwei-report").innerHTML = `<div class="ziwei-report-title"><div><small>${escapeHtml(sourceLabel)} · ${escapeHtml(interpretation.topic || item?.topic || "整体")}</small><h3>${escapeHtml(interpretation.title || "紫微结构报告")}</h3><p>${escapeHtml(interpretation.summary || "")}</p></div></div>${development.title ? `<section class="ziwei-development"><small>CAREER DIRECTION · 发展判断</small><h4>${escapeHtml(development.title)}</h4><p class="ziwei-development-lead">${escapeHtml(development.conclusion || "")}</p><div class="ziwei-direction-tags">${directionTags.map(value => `<span>${escapeHtml(value)}</span>`).join("")}</div><dl><div><dt>发挥方式</dt><dd>${escapeHtml(development.workMode || "")}</dd></div><div><dt>适配环境</dt><dd>${escapeHtml(development.environment || "")}</dd></div><div><dt>需要留意</dt><dd>${escapeHtml(development.watch || "")}</dd></div></dl><details><summary>查看判断依据</summary>${list(development.evidence)}</details></section>` : ""}<div class="ziwei-report-columns"><article><small>STRUCTURE · 结构证据</small>${list(interpretation.evidence)}</article><article><small>SUPPORT · 可利用线索</small>${list(interpretation.strengths)}</article><article><small>CHECK · 需复核线索</small>${list(interpretation.challenges)}</article></div><div class="ziwei-palace-readings">${(interpretation.palaces || []).map(palace => `<article><small>${escapeHtml(palace.name || "宫位")}</small><h4>${escapeHtml(palace.headline || "")}</h4><p>${escapeHtml(palace.summary || "")}</p>${list(palace.evidence)}</article>`).join("")}</div>${interpretation.otherPalaces?.length ? `<details class="ziwei-other-palaces"><summary>展开其余六宫</summary><div class="ziwei-palace-readings">${interpretation.otherPalaces.map(palace => `<article><small>${escapeHtml(palace.name || "宫位")}</small><h4>${escapeHtml(palace.headline || "")}</h4><p>${escapeHtml(palace.summary || "")}</p>${list(palace.evidence)}</article>`).join("")}</div></details>` : ""}<div class="ziwei-report-conclusion"><div><small>DECADE &amp; ANNUAL</small><h4>大限与流年</h4><p>${escapeHtml(interpretation.timingSummary || "")}</p></div><div><small>NEXT ACTION</small><h4>下一步</h4><p>${escapeHtml(interpretation.action || "")}</p></div></div><p class="ziwei-report-disclaimer">${escapeHtml(interpretation.disclaimer || "")}</p>`;
       document.getElementById("ziwei-report-empty").hidden = true;
       document.getElementById("ziwei-report").hidden = false;
     }
@@ -3291,7 +3295,7 @@
         const response = await fetch(apiUrl("/api/ziwei/history"));
         const payload = await response.json();
         if (!response.ok || !payload.ok) throw new Error(payload.error || "紫微历史读取失败");
-        list.innerHTML = payload.items?.length ? payload.items.map(item => `<article class="ziwei-history-entry"><div><small>${escapeHtml(item.topic)} · ${item.targetYear}年</small><h3>${escapeHtml(item.profileName)}的紫微报告</h3><p>${escapeHtml(item.title)} · ${escapeHtml(String(item.updatedAt || "").replace("T", " "))}</p></div><div><button type="button" data-ziwei-open="${escapeHtml(item.id)}">打开</button><a href="${apiUrl(`/api/ziwei/export?id=${encodeURIComponent(item.id)}`)}" data-ziwei-export>导出</a><button type="button" data-ziwei-delete="${escapeHtml(item.id)}">删除</button></div></article>`).join("") : `<p>暂无紫微报告。生成解读后会保存在这里。</p>`;
+        list.innerHTML = payload.items?.length ? payload.items.map(item => `<article class="ziwei-history-entry"><div><small>${escapeHtml(item.topic)} · ${item.targetYear}年</small><h3>${escapeHtml(item.profileName)}的紫微报告</h3><p>${escapeHtml(item.title)} · ${escapeHtml(String(item.updatedAt || "").replace("T", " "))}</p></div><div><button type="button" data-ziwei-open="${escapeHtml(item.id)}">打开</button><button type="button" data-ziwei-delete="${escapeHtml(item.id)}">删除</button></div></article>`).join("") : `<p>暂无紫微报告。生成解读后会保存在这里。</p>`;
       } catch (error) {
         list.innerHTML = `<p>${escapeHtml(error.message || "紫微历史读取失败")}</p>`;
       }
@@ -3637,13 +3641,6 @@
     });
     document.getElementById("ziwei-generate").addEventListener("click", () => generateZiweiChart());
     document.getElementById("ziwei-report-generate").addEventListener("click", generateZiweiReport);
-    document.querySelector(".ziwei-feature-nav").addEventListener("click", event => {
-      const trigger = event.target.closest("[data-ziwei-jump]");
-      if (!trigger) return;
-      const target = document.getElementById(trigger.dataset.ziweiJump);
-      if (target) target.scrollIntoView({behavior:"smooth",block:"start"});
-      document.querySelectorAll(".ziwei-feature-nav [data-ziwei-jump]").forEach(item => item.classList.toggle("active", item === trigger));
-    });
     document.getElementById("ziwei-board").addEventListener("click", event => {
       const palace = event.target.closest("[data-ziwei-branch]");
       if (palace) {
@@ -3667,8 +3664,6 @@
     document.getElementById("ziwei-history-list").addEventListener("click", async event => {
       const open = event.target.closest("[data-ziwei-open]");
       const remove = event.target.closest("[data-ziwei-delete]");
-      const exported = event.target.closest("[data-ziwei-export]");
-      if (exported) trackAcceptance("ziwei_reading_exported", "success", {method:"markdown"});
       try {
         if (open) await openZiweiReading(open.dataset.ziweiOpen);
         if (remove) {
@@ -3684,9 +3679,6 @@
           await loadZiweiHistory();
         }
       } catch (error) { showToast(error.message || "紫微历史操作失败"); }
-    });
-    document.getElementById("ziwei-report").addEventListener("click", event => {
-      if (event.target.closest("[data-ziwei-export]")) trackAcceptance("ziwei_reading_exported", "success", {method:"markdown"});
     });
     document.getElementById("api-modal-close").addEventListener("click", () => setApiModal(false));
     apiModal.addEventListener("click", event => { if (event.target === apiModal) setApiModal(false); });

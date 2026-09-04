@@ -158,6 +158,10 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertIn('/api/ziwei/history', html)
         self.assertIn('id="ziwei-reading-section"', html)
         self.assertIn('id="ziwei-history-section"', html)
+        self.assertIn('CAREER DIRECTION · 发展判断', html)
+        self.assertNotIn('class="feature-nav ziwei-feature-nav"', html)
+        self.assertNotIn('/api/ziwei/export', html)
+        self.assertNotIn('data-ziwei-export', html)
         self.assertNotIn('data-coming="紫微斗数"', html)
         self.assertNotIn('确定性引擎待接入', html)
         self.assertIn('.ziwei-loading[hidden]', theme)
@@ -168,7 +172,7 @@ class XuanhengBackendTests(unittest.TestCase):
         self.assertIn('.home-coordinate b{color:rgba(210,173,104,.42);font-size:44px}', theme)
         self.assertIn('.home-launch{margin-top:72px;padding:42px', theme)
 
-    def test_ziwei_report_is_cached_reopenable_exportable_and_deletable(self):
+    def test_ziwei_report_is_cached_reopenable_directional_and_deletable(self):
         now = "2026-09-04T12:00:00"
         record_id = "3" * 20
         with server.state_connection() as connection:
@@ -187,6 +191,10 @@ class XuanhengBackendTests(unittest.TestCase):
         same, cached = server.save_ziwei_reading({"historyId": record_id, "topic": "事业", "year": 2026})
         self.assertTrue(cached)
         self.assertEqual(same["id"], item["id"])
+        # 模型尚未生成正文时，历史详情也必须有可打开的本地确定性报告。
+        pending = server.get_ziwei_reading(item["id"])
+        self.assertEqual(pending["interpretation"]["source"], "local")
+        self.assertEqual(pending["interpretation"]["development"]["title"], "事业与发展方向")
         with server.API_CONFIG_LOCK:
             original = dict(server.API_CONFIG)
             server.API_CONFIG.clear()
@@ -196,6 +204,9 @@ class XuanhengBackendTests(unittest.TestCase):
             self.assertEqual(interpretation["source"], "local")
             self.assertEqual(len(interpretation["palaces"]), 6)
             self.assertEqual(len(interpretation["otherPalaces"]), 6)
+            self.assertEqual(interpretation["development"]["title"], "事业与发展方向")
+            self.assertGreaterEqual(len(interpretation["development"]["directions"]), 1)
+            self.assertGreaterEqual(len(interpretation["development"]["evidence"]), 1)
             reopened, interpretation_cached = server.analyze_ziwei_record(item["id"])
             self.assertTrue(interpretation_cached)
             self.assertEqual(reopened, interpretation)
@@ -204,7 +215,7 @@ class XuanhengBackendTests(unittest.TestCase):
                 server.API_CONFIG.clear()
                 server.API_CONFIG.update(original)
         saved = server.get_ziwei_reading(item["id"])
-        self.assertIn("玄衡紫微斗数报告", server.ziwei_markdown(saved))
+        self.assertIn("development", saved["interpretation"])
         self.assertEqual(len(server.list_ziwei_readings(record_id)), 1)
         self.assertTrue(server.delete_ziwei_reading(item["id"]))
         self.assertIsNone(server.get_ziwei_reading(item["id"]))
