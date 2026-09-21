@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>玄衡 · 日光之间｜首页概念 A</title>
+<style>
+:root{--bg:#ebf5ff;--ink:#17212c;--muted:#5e6a78;--line:#17212c20;--surface:#fafdff;--accent:#176a98;--font:Inter,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--font);-webkit-font-smoothing:antialiased}button,a{-webkit-tap-highlight-color:transparent}button,input{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}button{color:inherit}button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid #078aff;outline-offset:6px}button:disabled{cursor:default}::selection{background:#b9def9}svg{display:block}button svg{width:20px;height:20px}.shell{max-width:1320px;margin:0 auto;padding:0 42px}
+header{height:104px;display:flex;align-items:center;justify-content:space-between;gap:28px}.brand{display:flex;align-items:center;gap:11px}.brand-mark{width:38px;height:38px;display:grid;place-items:center;border:1.5px solid var(--ink);border-radius:12px;font:25px/1 Georgia,"Songti SC",serif;transform:rotate(-5deg)}.brand-name{font-size:25px;font-weight:650;letter-spacing:.12em}.header-nav{display:flex;gap:32px;font-size:14px}.header-actions{display:flex;align-items:center;gap:16px}.version-pill{font-size:10px;font-weight:650;letter-spacing:.09em;border:1px solid var(--line);border-radius:100px;padding:5px 10px;white-space:nowrap}
+.button{border:0;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;gap:26px;padding:14px 23px;min-height:48px;font-size:14px;font-weight:550;transition:transform .2s,background .2s}.button:hover{transform:translateY(-2px)}.primary{background:#18212a;color:#fff}.primary:hover{background:#2a3744}.secondary{background:#fff9}.button span:last-child{font-size:20px;line-height:1}
+.hero{text-align:center;position:relative;padding:32px 0 12px}.hero-tag{display:inline-flex;align-items:center;gap:8px;color:#486271;font-size:12px;letter-spacing:.1em;margin:0 0 17px}.hero-tag span{width:7px;height:7px;border-radius:50%;background:#688d9e}.hero h1{font-size:clamp(45px,5.4vw,78px);font-weight:550;letter-spacing:-.065em;line-height:1.14;margin:0}.hero h1 em{font-style:normal;color:#728b9e}.hero>p{font-size:15px;color:var(--muted);margin:22px 0 0;letter-spacing:.02em}.hero-orbit{position:absolute;width:88px;height:88px;left:9%;top:90px;border:15px solid #f9dcae;border-radius:50%;box-shadow:inset 2px 5px 7px #c8995d35,4px 9px 12px #8298a81f;transform:rotate(-22deg);background:transparent}.hero-orbit:after{content:"";position:absolute;inset:-17px;border:1px solid #fff8;border-radius:50%}.hero-star{position:absolute;right:11%;top:127px;width:58px;filter:drop-shadow(4px 10px 5px #8496bd20);transform:rotate(14deg)}
+.explorer{margin-top:24px}.module-tabs{display:flex;justify-content:center;gap:6px;margin:0 auto 10px;max-width:max-content;background:#fff8;padding:5px;border-radius:100px}.module-tabs button{border:0;background:transparent;color:#627080;border-radius:100px;padding:9px 22px;font-size:13px;transition:.25s}.module-tabs button[aria-pressed=true]{background:#18212a;color:#fff;box-shadow:0 3px 7px #18212a10}.module-tabs button:hover:not([aria-pressed=true]){background:#fff}
+.card-stage{height:385px;position:relative;perspective:1200px;touch-action:pan-y;user-select:none;cursor:grab;--drag:0px}.card-stage.dragging{cursor:grabbing}.module-card{position:absolute;width:340px;height:350px;left:50%;top:18px;border-radius:32px;padding:25px 27px 24px;overflow:hidden;transform:translateX(calc(-50% + var(--slot)*345px + var(--drag))) translateY(calc(var(--slot)*var(--slot)*13px)) rotate(calc(var(--slot)*5deg)) scale(.93);transition:transform .55s cubic-bezier(.22,.8,.3,1),box-shadow .5s;box-shadow:0 7px 10px #2a43650a;z-index:1;isolation:isolate}.module-card.selected{transform:translateX(calc(-50% + var(--drag))) translateY(0) rotate(0) scale(1);box-shadow:0 21px 36px -20px #36577455;z-index:3}.module-card:hover{box-shadow:0 18px 26px -20px #29445550}.module-card[data-index="0"]{background:linear-gradient(145deg,#d3ebff,#c5e2fa)}.module-card[data-index="1"]{background:linear-gradient(140deg,#f1e5ff,#e7d7f9)}.module-card[data-index="2"]{background:linear-gradient(140deg,#e1f7e9,#cbefd9)}.card-top{display:flex;align-items:center;justify-content:space-between;font-size:10px;letter-spacing:.12em;color:#45576b}.card-index{font-variant-numeric:tabular-nums;opacity:.65}.art{height:163px;margin:3px auto 0;max-width:240px;pointer-events:none}.art svg{width:100%;height:100%;overflow:visible}.card-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:3px}.card-heading h2{font-size:27px;letter-spacing:-.035em;margin:0;font-weight:600}.card-heading .round-button{border:1px solid #17212c20;background:#ffffff55;width:39px;height:39px;display:grid;place-items:center;border-radius:50%;font-size:22px;transition:.2s}.selected .round-button{background:var(--ink);color:#fff;border-color:var(--ink)}.card-heading .round-button:hover{transform:rotate(45deg)}.card-copy{font-size:12px;line-height:1.8;color:#536475;margin:8px 0 0;max-width:250px}.card-footer{font-size:10px;display:flex;gap:6px;align-items:center;margin-top:15px;color:#546374}.card-footer:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.deck-controls{display:flex;justify-content:center;align-items:center;gap:22px;margin:0 auto;padding-top:2px}.arrow-button{width:38px;height:38px;border:1px solid #17212c26;border-radius:50%;background:transparent;display:grid;place-items:center;transition:.2s}.arrow-button:hover{background:#fff}.deck-counter{font-size:12px;letter-spacing:.17em;color:#7d8a98}.deck-counter strong{color:var(--ink);font-weight:600}.drag-hint{font-size:11px;color:#647887;display:flex;align-items:center;gap:7px;margin-left:8px}.drag-hint svg{width:17px;height:17px}.context{max-width:1070px;margin:38px auto 0;padding:22px 0 26px;border-top:1px solid #17212c20;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}.context-copy{display:flex;align-items:center;gap:18px}.context-copy strong{font-size:13px;white-space:nowrap}.context-copy p{font-size:12px;margin:0;color:var(--muted)}.feature-list{display:flex;flex-wrap:wrap;gap:7px}.feature-chip{border:0;background:#fff9;border-radius:100px;padding:8px 12px;font-size:11px;display:flex;align-items:center;gap:13px}.feature-chip:hover{background:#fff}.feature-chip span{font-size:14px}
+.guide{margin:62px 0 65px;padding:47px 48px;background:#fafdff;border-radius:32px;display:grid;grid-template-columns:1.1fr 1fr;gap:65px}.eyebrow{font-size:10px;letter-spacing:.14em;font-weight:600;color:#587385}.guide h2{font-size:33px;font-weight:550;line-height:1.4;letter-spacing:-.04em;margin:13px 0 12px}.guide p{font-size:13px;color:var(--muted);margin:0;max-width:410px;line-height:1.9}.guide-steps{display:grid;gap:21px}.guide-step{display:flex;gap:15px}.step-no{font-size:11px;width:26px;height:26px;flex-shrink:0;background:#ebf5ff;border-radius:50%;display:grid;place-items:center;color:#4f718b}.guide-step h3{margin:0 0 2px;font-size:13px;font-weight:600}.guide-step p{font-size:12px}.page-footer{padding:0 0 25px;display:flex;justify-content:space-between;gap:20px;font-size:10px;color:#657786}.page-footer a{text-decoration:underline;text-underline-offset:4px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+dialog{border:0;border-radius:32px;padding:43px;width:min(730px,calc(100% - 32px));max-height:85dvh;overflow:auto;background:var(--surface);color:var(--ink);box-shadow:0 30px 130px #203b5040}dialog::backdrop{background:#1d384850;backdrop-filter:blur(8px)}.modal-open{overflow:hidden}.dialog-close{position:absolute;right:20px;top:18px;width:35px;height:35px;display:grid;place-items:center;border:0;background:#eaf1f5;border-radius:50%;font-size:23px}.dialog-content h2{font-size:38px;font-weight:550;line-height:1.3;letter-spacing:-.04em;margin:16px 0}.dialog-lead{font-size:14px;color:var(--muted);max-width:520px}.dialog-tabs{display:flex;gap:5px;flex-wrap:wrap;margin:26px 0 18px}.dialog-tabs button{padding:9px 14px;background:#eaf1f5;border:0;border-radius:100px;font-size:12px}.dialog-tabs button[aria-pressed=true]{background:var(--ink);color:#fff}.dialog-preview{background:#ebf5ff;padding:28px;border-radius:23px;margin:22px 0}.mini-label{font-size:10px;letter-spacing:.06em;color:#658097}.dialog-preview h3{font-size:23px;font-weight:550;margin:14px 0 10px}.dialog-preview p{font-size:13px;color:var(--muted);line-height:1.9}.preview-flow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:25px}.preview-flow>div{padding:17px 12px;background:#ffffffb0;border-radius:13px}.preview-flow span{display:block;font-size:10px;color:#6e8aa0;margin-bottom:6px}.preview-flow strong{font-size:12px;font-weight:550}.prototype-note{font-size:11px;color:#74818c;margin:23px 0}
+@media(min-width:1600px){.hero{padding-top:52px}.card-stage{height:405px}.module-card{top:25px}.context{margin-top:42px}}
+@media(max-width:1120px){.shell{padding:0 28px}.module-card{width:300px;transform:translateX(calc(-50% + var(--slot)*290px + var(--drag))) translateY(13px) rotate(calc(var(--slot)*5deg)) scale(.9)}.context{grid-template-columns:1fr;justify-items:center;margin-top:26px}.hero-orbit{left:4%;width:60px;height:60px;border-width:11px}.hero-star{right:5%;width:45px}.guide{gap:30px}}
+@media(max-width:800px){.hero-orbit,.hero-star{display:none}.header-nav{display:none}header{height:88px}.hero{padding-top:26px}.hero h1{font-size:55px}.hero>p{font-size:13px}.card-stage{height:370px;margin:0 -28px;overflow:hidden}.module-card{width:290px;transform:translateX(calc(-50% + var(--slot)*265px + var(--drag))) translateY(13px) rotate(calc(var(--slot)*5deg)) scale(.89)}.guide{grid-template-columns:1fr;padding:30px}.context-copy{display:block;text-align:center}.context-copy p{margin-top:5px}.guide{margin-top:42px}.page-footer{flex-direction:column;gap:7px}.version-pill{display:none}}
+@media(max-width:480px){.shell{padding:0 22px}.brand-mark{width:32px;height:32px;font-size:22px}.brand-name{font-size:23px}.header-actions .button{font-size:12px;padding:10px 17px;min-height:40px;gap:15px}.hero h1{font-size:43px;line-height:1.2}.hero>p{max-width:265px;margin:18px auto 0;line-height:1.8}.hero-tag{font-size:10px}.explorer{margin-top:20px}.module-tabs{gap:1px}.module-tabs button{padding:8px 15px;font-size:12px}.module-card{width:274px;height:335px;padding:22px;transform:translateX(calc(-50% + var(--slot)*253px + var(--drag))) translateY(13px) rotate(calc(var(--slot)*5deg)) scale(.9)}.card-stage{height:369px;margin:0 -22px}.art{height:157px}.card-heading h2{font-size:25px}.drag-hint{display:none}.context{padding-top:20px;margin-top:29px}.feature-list{justify-content:center}.feature-chip{padding:8px 10px;font-size:10px;gap:8px}.guide h2{font-size:28px}.guide{padding:28px 25px}.page-footer{font-size:10px}dialog{padding:35px 23px}.dialog-content h2{font-size:31px}.dialog-preview{padding:20px}.preview-flow{gap:6px}.preview-flow>div{padding:14px 8px}.preview-flow strong{font-size:11px}}
+@media(max-width:480px){.hero h1{font-size:clamp(29px,9.2vw,39px)}.hero h1 em{white-space:nowrap}.step-no{font-size:12px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+<a class="brand" href="#" aria-label="玄衡首页"><span class="brand-mark">玄</span><span class="brand-name">玄衡</span></a>
+<nav class="header-nav" aria-label="主导航"><a href="#explore">探索功能</a><a href="#guide">如何开始</a></nav>
+<div class="header-actions"><span class="version-pill">CONCEPT A</span><button class="button primary" data-archive>我的档案 <span aria-hidden="true">↗</span></button></div>
+</header>
+<main>
+<section class="hero">
+<div class="hero-orbit" aria-hidden="true"></div>
+<svg class="hero-star" viewBox="0 0 80 80" aria-hidden="true"><defs><linearGradient id="starFill" x2=".9" y2="1"><stop stop-color="#fff"/><stop offset=".45" stop-color="#c3b4e8"/><stop offset="1" stop-color="#9b8ac6"/></linearGradient></defs><path fill="url(#starFill)" d="M40 0C43 27 53 37 80 40C53 43 43 53 40 80C37 53 27 43 0 40C27 37 37 27 40 0Z"/></svg>
+<div class="hero-tag"><span></span> THREE PERSPECTIVES. ONE YOU.</div>
+<h1>生活有很多面。<br>换个角度，<em>看见你。</em></h1>
+<p>从长期的自己，到此刻的问题。找到适合你的观察方式。</p>
+</section>
+<section class="explorer" id="explore" aria-label="三大功能卡片">
+<div class="module-tabs" role="group" aria-label="选择功能"><button data-select="0" aria-pressed="true">四柱八字</button><button data-select="1" aria-pressed="false">塔罗占问</button><button data-select="2" aria-pressed="false">紫微斗数</button></div>
+<div class="card-stage" aria-label="点击卡片或左右拖动，也可用左右方向键切换">
+<article class="module-card selected" data-index="0" style="--slot:0" tabindex="0" role="group" aria-label="四柱八字，当前选中">
+<div class="card-top"><span>THE PATTERN OF YOU</span><span class="card-index">01 / 03</span></div>
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 260 170"><defs>
+<linearGradient id="pillar" x1="0" y1="0" x2="1" y2=".35"><stop stop-color="#fafdff"/><stop offset=".4" stop-color="#c6e4ff"/><stop offset="1" stop-color="#70a7d8"/></linearGradient>
+<linearGradient id="pillar2" x2="1" y2=".3"><stop stop-color="#b8dcf9"/><stop offset=".5" stop-color="#91bfe4"/><stop offset="1" stop-color="#588fc0"/></linearGradient>
+<radialGradient id="orb"><stop stop-color="#fff8d6"/><stop offset=".6" stop-color="#ffde9e"/><stop offset="1" stop-color="#e3b261"/></radialGradient>
+<filter id="shadow"><feDropShadow dx="4" dy="10" stdDeviation="6" flood-color="#426e9c" flood-opacity=".19"/></filter></defs>
+<ellipse cx="130" cy="148" rx="92" ry="9" fill="#92b7d5" opacity=".16"/>
+<g filter="url(#shadow)" transform="translate(30 10) rotate(-10 100 80)">
+<rect x="4" y="53" width="40" height="85" rx="13" fill="url(#pillar2)"/><rect x="53" y="24" width="40" height="114" rx="13" fill="url(#pillar)"/>
+<rect x="102" y="4" width="40" height="134" rx="13" fill="url(#pillar)"/><rect x="151" y="38" width="40" height="100" rx="13" fill="url(#pillar2)"/>
+<path d="M15 71v20M64 42v35M113 22v38M162 56v22" stroke="#fff" stroke-opacity=".65" stroke-width="3" stroke-linecap="round"/>
+</g><circle cx="217" cy="36" r="17" fill="url(#orb)" filter="url(#shadow)"/>
+</svg></div>
+<div class="card-heading"><h2>四柱八字</h2><button class="round-button" data-enter="0" aria-label="探索四柱八字">↗</button></div>
+<p class="card-copy">认识自己的长期结构，<br>也看见时间带来的变化。</p><div class="card-footer">命盘 · 岁运 · 问事 · 合缘</div>
+</article>
+<article class="module-card" data-index="1" style="--slot:1" tabindex="0" role="group" aria-label="塔罗占问，点击切换">
+<div class="card-top"><span>A MOMENT OF CLARITY</span><span class="card-index">02 / 03</span></div>
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 260 170"><defs><linearGradient id="tarotBack" x2="1" y2="1"><stop stop-color="#d3bdf4"/><stop offset="1" stop-color="#9176c3"/></linearGradient><linearGradient id="tarotFront" x2="1" y2="1"><stop stop-color="#fffcff"/><stop offset="1" stop-color="#e8d8ff"/></linearGradient><filter id="tarotShadow"><feDropShadow dx="3" dy="9" stdDeviation="5" flood-color="#6c4c91" flood-opacity=".23"/></filter></defs>
+<ellipse cx="130" cy="155" rx="75" ry="7" fill="#a995c6" opacity=".12"/>
+<g filter="url(#tarotShadow)">
+<g transform="rotate(-21 125 104)"><rect x="68" y="29" width="84" height="118" rx="12" fill="url(#tarotBack)"/><rect x="74" y="35" width="72" height="106" rx="8" fill="none" stroke="#fff" stroke-opacity=".4"/></g>
+<g transform="rotate(18 140 110)"><rect x="105" y="21" width="88" height="124" rx="12" fill="#b89adb"/><rect x="111" y="27" width="76" height="112" rx="8" fill="none" stroke="#fff" stroke-opacity=".4"/></g>
+<g transform="rotate(-4 133 89)"><rect x="88" y="12" width="89" height="132" rx="12" fill="url(#tarotFront)"/><rect x="95" y="19" width="75" height="118" rx="8" fill="none" stroke="#cbb4e6"/>
+<circle cx="132" cy="70" r="22" fill="#f7d693"/><circle cx="132" cy="70" r="15" fill="#ffe8b9"/><path d="M132 34v8m0 56v8M96 70h8m56 0h8M106 44l6 6m40 40 6 6m-52 0 6-6m40-40 6-6" stroke="#c49a53" stroke-width="2" stroke-linecap="round"/><path d="M115 119h35" stroke="#bca0d2" stroke-width="2" stroke-linecap="round"/></g></g>
+</svg></div>
+<div class="card-heading"><h2>塔罗占问</h2><button class="round-button" data-enter="1" aria-label="探索塔罗占问">↗</button></div>
+<p class="card-copy">从一个具体问题开始，<br>给当下的自己一点新启发。</p><div class="card-footer">提问 · 抽牌 · 翻牌 · 解读</div>
+</article>
+<article class="module-card" data-index="2" style="--slot:-1" tabindex="0" role="group" aria-label="紫微斗数，点击切换">
+<div class="card-top"><span>YOUR BIGGER PICTURE</span><span class="card-index">03 / 03</span></div>
+<div class="art" aria-hidden="true"><svg viewBox="0 0 260 170"><defs><linearGradient id="jade" x1=".1" y1="0" x2=".9" y2="1"><stop stop-color="#f0fff4"/><stop offset=".35" stop-color="#aadbbe"/><stop offset="1" stop-color="#659879"/></linearGradient><radialGradient id="jadeOrb" cx=".3" cy=".25"><stop stop-color="#fff"/><stop offset=".35" stop-color="#d2ecd8"/><stop offset="1" stop-color="#66987b"/></radialGradient><filter id="jadeShadow"><feDropShadow dx="3" dy="10" stdDeviation="6" flood-color="#40734e" flood-opacity=".2"/></filter></defs>
+<ellipse cx="133" cy="151" rx="79" ry="8" fill="#a4cdb0" opacity=".15"/>
+<g filter="url(#jadeShadow)" transform="rotate(-18 130 85)"><ellipse cx="130" cy="85" rx="72" ry="57" fill="none" stroke="url(#jade)" stroke-width="21"/><ellipse cx="130" cy="85" rx="62" ry="48" fill="none" stroke="#f7fff9" stroke-opacity=".55" stroke-width="2"/><path d="m82 64 63-8 35 55-65 13-33-60m33 60 30-68m-63 8 98 47" stroke="#54886e" stroke-opacity=".65" stroke-width="1.3" fill="none"/><circle cx="82" cy="64" r="5" fill="#fafdff"/><circle cx="145" cy="56" r="6" fill="#fafdff"/><circle cx="180" cy="111" r="5" fill="#fafdff"/><circle cx="115" cy="124" r="5" fill="#fafdff"/></g>
+<circle cx="207" cy="43" r="14" fill="url(#jadeOrb)"/><path d="M130 66c2 11 7 16 18 18-11 2-16 7-18 18-2-11-7-16-18-18 11-2 16-7 18-18Z" fill="#f8fffa"/>
+</svg></div>
+<div class="card-heading"><h2>紫微斗数</h2><button class="round-button" data-enter="2" aria-label="探索紫微斗数">↗</button></div>
+<p class="card-copy">从十二宫的关联中，<br>观察人生不同侧面的联系。</p><div class="card-footer">命盘 · 解读 · 大限 · 流年</div>
+</article>
+</div>
+<div class="deck-controls"><button class="arrow-button" data-step="-1" aria-label="上一个板块"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m14 6-6 6 6 6"/></svg></button><span class="deck-counter"><strong data-current-number>01</strong> / 03</span><button class="arrow-button" data-step="1" aria-label="下一个板块"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m10 6 6 6-6 6"/></svg></button><span class="drag-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="m5 8-3 4 3 4m14-8 3 4-3 4M2 12h20"/></svg>左右拖动，换个视角</span></div>
+<div class="context"><div class="context-copy"><strong data-current-name>四柱八字</strong><p data-current-intro>从出生时空出发，看见自己的长期结构。</p></div><div class="feature-list" data-current-features></div></div>
+</section>
+<section class="guide" id="guide"><div><span class="eyebrow">A PLACE TO BEGIN</span><h2>不用一次弄懂所有。<br>从你在意的事开始。</h2><p>玄衡把传统文化中的观察方法，整理成更清晰的阅读体验。它提供一种思考视角，不替你决定人生。</p></div><div class="guide-steps"><div class="guide-step"><span class="step-no">01</span><div><h3>选一个适合此刻的入口</h3><p>想了解长期结构，或梳理一个当下的问题。</p></div></div><div class="guide-step"><span class="step-no">02</span><div><h3>只填写真正需要的信息</h3><p>八字与紫微共用出生档案；塔罗只需要你的问题。</p></div></div><div class="guide-step"><span class="step-no">03</span><div><h3>带着现实经验，回来对照</h3><p>把观察留作参考，把判断留给自己。</p></div></div></div></section>
+</main>
+<footer class="page-footer"><span>玄衡 · 日光之间 / 概念 A · 独立交互稿，未连接真实数据</span><a href="home-concept-b-midnight.html">看看概念 B：浮光星屿 ↗</a><span>传统文化研习参考 · 非人生决策依据</span></footer>
+</div>
+<p class="sr-only" data-announcement aria-live="polite" aria-atomic="true"></p>
+<dialog aria-label="功能概念预览"><button class="dialog-close" data-close aria-label="关闭">×</button><div class="dialog-content"></div></dialog>
+<script>
+const modules = [
+ {name:"四柱八字",en:"BAZI",intro:"从出生时空出发，看见自己的长期结构。",source:"使用出生档案",features:["命盘研判","岁运时间轴","问一件事","合缘"],descriptions:["把四柱、五行与结构依据放在一起阅读。先看清信息，再理解它们之间的关系。","以大运为背景，逐层查看流年与流月。时间是一条可探索的路径，而不是一段堆叠的文字。","带着具体问题，结合命盘整理思路。问事与历史记录保持在同一个工作空间。","选择两份出生档案，观察相处中的互补与差异。关系不由一个分数决定。"],items:[["四柱结构","五行分布","命局观察"],["大运","流年","流月"],["当前问题","判断依据","历史问事"],["两份档案","关系线索","相处建议"]]},
+ {name:"塔罗占问",en:"TAROT",intro:"给此刻的具体问题，留一个重新思考的空间。",source:"从一个具体问题开始",features:["提出问题","选择牌阵","抽牌与翻牌","回看记录"],descriptions:["先写下真正关心的具体问题。没有问题时，不会抽出牌，也不会出现解读。","围绕问题选择合适的牌阵。让每一个位置都承担清楚的含义。","先抽牌，再亲手翻开。所有牌面揭晓后，才进入完整解读。","保留问题、牌阵与当次解读。重新打开记录，不会重新抽牌。"],items:[["明确问题","保留背景","确认范围"],["单张牌","三牌阵","更多牌阵"],["牌背","逐张揭晓","完整解读"],["原始问题","当次牌面","保存的解读"]]},
+ {name:"紫微斗数",en:"ZIWEI",intro:"把十二宫连成一张图，理解人生不同侧面的联系。",source:"与八字共用出生档案",features:["十二宫命盘","命盘解读","大限流年","历史报告"],descriptions:["用十二宫组织星曜、四化与宫位关系。点击宫位，聚焦相关结构。","从事业、关系等具体主题展开。先呈现命盘依据，再给出可供现实检验的观察。","切换大限与流年，把本命结构与时间变化分层阅读。","按出生档案与观察主题回看已有报告，保持每次阅读的上下文。"],items:[["十二宫","星曜与四化","三方四正"],["观察主题","结构依据","发展方向"],["本命层","大限层","流年层"],["出生档案","观察主题","原始报告"]]}
+];
+let active = 0, start = null, suppressUntil = 0;
+const stage = document.querySelector(".card-stage");
+const cards = [...document.querySelectorAll(".module-card")];
+const tabs = [...document.querySelectorAll("[data-select]")];
+const modal = document.querySelector("dialog");
+let returnFocus = null;
+function select(index, announce=true){
+ active = (index+3)%3;
+ cards.forEach((card,i)=>{
+  let slot=(i-active+3)%3; if(slot===2)slot=-1;
+  card.style.setProperty("--slot",slot);
+  card.dataset.position = slot===0?"center":slot<0?"left":"right";
+  card.classList.toggle("selected",i===active);
+  card.setAttribute("aria-label",modules[i].name+(i===active?"，当前选中":"，点击切换"));
+ });
+ tabs.forEach(button=>button.setAttribute("aria-pressed",String(Number(button.dataset.select)===active)));
+ document.querySelectorAll("[data-current-name]").forEach(el=>el.textContent=modules[active].name);
+ document.querySelectorAll("[data-current-intro]").forEach(el=>el.textContent=modules[active].intro);
+ document.querySelectorAll("[data-current-source]").forEach(el=>el.textContent=modules[active].source);
+ document.querySelectorAll("[data-current-number]").forEach(el=>el.textContent=String(active+1).padStart(2,"0"));
+ const featureWrap=document.querySelector("[data-current-features]");
+ if(featureWrap)featureWrap.innerHTML=modules[active].features.map((name,i)=>'<button class="feature-chip" data-feature="'+i+'">'+name+'<span aria-hidden="true">↗</span></button>').join("");
+ if(announce)document.querySelector("[data-announcement]").textContent="已切换到"+modules[active].name+"。"+modules[active].intro;
+}
+function openModal(content){
+ returnFocus=document.activeElement;
+ modal.querySelector(".dialog-content").innerHTML=content;
+ modal.showModal();
+ document.body.classList.add("modal-open");
+ modal.querySelector(".dialog-close").focus();
+}
+function openModule(index=active,feature=0){
+ select(index);
+ const m=modules[index];
+ openModal('<span class="eyebrow">MODULE '+String(index+1).padStart(2,"0")+' · 内容结构预览</span><h2>'+m.name+'</h2><p class="dialog-lead">'+m.intro+'</p><div class="dialog-tabs" role="group" aria-label="'+m.name+'内容切换">'+m.features.map((n,i)=>'<button data-dialog-feature="'+i+'" aria-pressed="'+(i===feature)+'">'+n+'</button>').join("")+'</div><div class="dialog-preview"></div><p class="prototype-note">这是交互与布局概念，不读取真实档案，不生成命理解读。</p><button class="button primary" data-close>返回三张卡片 <span aria-hidden="true">↙</span></button>');
+ renderFeature(feature);
+}
+function renderFeature(index){
+ const m=modules[active];
+ modal.querySelectorAll("[data-dialog-feature]").forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.dialogFeature)===index)));
+ modal.querySelector(".dialog-preview").innerHTML='<span class="mini-label">功能预览 / '+m.source+'</span><h3>'+m.features[index]+'</h3><p>'+m.descriptions[index]+'</p><div class="preview-flow">'+m.items[index].map((s,i)=>'<div><span>0'+(i+1)+'</span><strong>'+s+'</strong></div>').join("")+'</div>';
+}
+function closeModal(){modal.close();}
+modal.addEventListener("close",()=>{document.body.classList.remove("modal-open");if(returnFocus?.isConnected)returnFocus.focus();});
+modal.addEventListener("click",e=>{
+ if(e.target===modal){const b=modal.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)closeModal();}
+});
+document.addEventListener("click",e=>{
+ if(performance.now()<suppressUntil && e.target.closest(".card-stage")){e.preventDefault();return;}
+ const button=e.target.closest("button,a");
+ if(button?.hasAttribute("data-select"))select(Number(button.dataset.select));
+ else if(button?.hasAttribute("data-step"))select(active+Number(button.dataset.step));
+ else if(button?.hasAttribute("data-enter"))openModule(button.dataset.enter==="active"?active:Number(button.dataset.enter));
+ else if(button?.hasAttribute("data-feature"))openModule(active,Number(button.dataset.feature));
+ else if(button?.hasAttribute("data-dialog-feature"))renderFeature(Number(button.dataset.dialogFeature));
+ else if(button?.hasAttribute("data-close"))closeModal();
+ else if(button?.hasAttribute("data-archive"))openModal('<span class="eyebrow">YOUR SPACE · 出生档案</span><h2>一份档案，<br>两种观察方式。</h2><p class="dialog-lead">四柱八字与紫微斗数共用出生档案。塔罗从当下的问题开始，不需要出生资料。</p><div class="dialog-preview"><span class="mini-label">概念演示</span><h3>真实资料，仍留在原来的项目中。</h3><p>这份独立概念稿没有连接数据库，也不会读取、新增或修改你的出生档案。</p></div><button class="button primary" data-close>知道了 <span aria-hidden="true">↗</span></button>');
+ else if(e.target.closest(".module-card"))select(Number(e.target.closest(".module-card").dataset.index));
+});
+stage.addEventListener("keydown",e=>{
+ if(e.key==="ArrowRight"||e.key==="ArrowLeft"){e.preventDefault();select(active+(e.key==="ArrowRight"?1:-1));}
+ else if((e.key==="Enter"||e.key===" ")&&e.target.classList.contains("module-card")){e.preventDefault();select(Number(e.target.dataset.index));}
+});
+stage.addEventListener("pointerdown",e=>{
+ if(e.button!==0||e.target.closest("button,a"))return;
+ start={x:e.clientX,y:e.clientY,id:e.pointerId,moved:false};
+});
+stage.addEventListener("pointermove",e=>{
+ if(!start||e.pointerId!==start.id)return;
+ const dx=e.clientX-start.x,dy=e.clientY-start.y;
+ if(!start.moved&&Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){start=null;return;}
+ if(Math.abs(dx)>8){start.moved=true;stage.setPointerCapture(e.pointerId);stage.classList.add("dragging");stage.style.setProperty("--drag",Math.max(-45,Math.min(45,dx*.25))+"px");}
+});
+function endDrag(e){
+ if(!start||e.pointerId!==start.id)return;
+ const dx=e.clientX-start.x;
+ if(start.moved){suppressUntil=performance.now()+250;if(Math.abs(dx)>48)select(active+(dx<0?1:-1));}
+ stage.classList.remove("dragging");stage.style.setProperty("--drag","0px");start=null;
+ if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);
+}
+stage.addEventListener("pointerup",endDrag);
+stage.addEventListener("pointercancel",e=>{stage.classList.remove("dragging");stage.style.setProperty("--drag","0px");start=null;});
+select(0,false);
+</script>
+</body></html>

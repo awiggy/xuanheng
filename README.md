@@ -1,6 +1,12 @@
-# 玄衡 · Xuanheng
+# Luma · 日光之间
 
-以「玄夜星图」为统一视觉的传统文化研究应用，集成四柱八字、塔罗占问、紫微斗数与合缘。
+生活有很多面。换个角度，看见你。
+
+Luma（原玄衡）是集四柱八字、塔罗占问、紫微斗数与合缘于一体的传统文化研究应用。采用「日光之间」浅蓝与粉彩视觉，以三张可点击、拖动和键盘切换的首页卡片连接真实功能。
+
+![Luma 日光之间首页预览](docs/images/luma-home.png)
+
+> 上图为用户提供的当前界面预览，不代表服务已在线部署。
 
 **当前状态：本地候选验收版（RC），不是已上线的生产服务。** 代码实现不等于人工验收通过，紫微排盘仍待至少 30 盘对照校准。当前不提供云端账户或跨设备同步。
 
@@ -22,18 +28,20 @@
 推荐在 **macOS + Python 3** 环境使用。当前模型密钥保存依赖 macOS 钥匙串；其他系统未完成完整适配验收。
 
 ```bash
-git clone https://github.com/awiggy/xuanheng.git
-cd xuanheng
+git clone https://github.com/awiggy/luma.git
+cd luma
 python3 server.py
 ```
 
 浏览器打开 <http://127.0.0.1:4173/#/home>。服务仅监听本机 `127.0.0.1:4173`。
 
-macOS 也可双击仓库中的 **打开玄衡.command**；或在项目目录运行：
+macOS 也可双击仓库中的 **打开Luma.command**；或在项目目录运行：
 
 ```bash
-zsh 打开玄衡.command
+zsh 打开Luma.command
 ```
+
+旧的 `打开玄衡.command` 保留兼容；现有本地目录不强制重命名，`.xuanheng/` 数据目录和 API 身份不迁移，已有档案继续使用。
 
 请保持服务终端运行。关闭终端或按 `Ctrl+C` 停止服务后，页面无法继续排盘或读写档案。
 
@@ -46,7 +54,7 @@ zsh 打开玄衡.command
 
 基础本地后端及已纳入仓库的排盘脚本使用 Python 标准库；地图、地理编码及外部模型服务需要网络。无模型配置时，部分模块仅提供本地规则报告，不能将其视为完整模型分析。
 
-**不要直接双击 `index.html` 使用产品。** 它依赖 `server.py` 提供的 API。仓库中的 React / Next / Vinext 工程为另一套占位工程，`npm run dev` 不是当前玄衡完整产品的启动入口。
+**不要直接双击 `index.html` 使用产品。** 它依赖 `server.py` 提供的 API。仓库中的 React / Next / Vinext 工程为另一套占位工程，`npm run dev` 不是当前 Luma 完整产品的启动入口。
 
 ## 数据与隐私
 
@@ -60,7 +68,9 @@ zsh 打开玄衡.command
 
 | 路径 | 用途 |
 | --- | --- |
-| `index.html`、`night-theme.css` | 当前产品界面及玄夜星图样式 |
+| `index.html`、`app-layout.css`、`daylight-theme.css`、`home-daylight.css` | 当前产品界面、布局及日光之间视觉 |
+| `brand-config.js`、`daylight-ui.js`、`home-cards.js` | 品牌配置、共享展示及首页交互 |
+| `docs/images/luma-home.png` | 当前首页预览图 |
 | `server.py` | 本地 HTTP/API、档案、分析配置与历史管理 |
 | `tarot_engine.py` | 塔罗引擎适配与本地解释 |
 | `ziwei_engine.py` | 紫微排盘及运限计算 |
@@ -87,7 +97,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 **网页能打开，但不能新建或读取档案？** 确认 `python3 server.py` 所在终端仍在运行，并从上面的本地地址访问，而不是 `file://` 或静态页面。
 
-**端口被占用？** 先检查是否已经运行了玄衡，优先使用已有服务；不要盲目结束不明进程。
+**端口被占用？** 先检查是否已经运行了 Luma，优先使用已有服务；不要盲目结束不明进程。
 
 **修改前端后如何查看？** 保存 HTML/CSS 后刷新浏览器；修改 Python 后端后重启服务。
 

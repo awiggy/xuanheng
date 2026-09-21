@@ -5,11 +5,12 @@
 ## 当前工程
 
 - `index.html`：当前正式本地前端，覆盖主页、出生档案、四柱、岁运、问事、塔罗、紫微和合缘。
+- 正式前端样式拆分为 `app-layout.css`（交互几何）、`daylight-theme.css`（统一日光设计系统）、`home-daylight.css`（已批准的首页卡片）；不再加载 `night-theme.css`。品牌在 `brand-config.js`，首页导航交互在 `home-cards.js`，共享展示在 `daylight-ui.js`。
 - `server.py`：本地 HTTP/API 服务，负责档案、地区、历法换算、四柱反查、排盘、分析、历史及各体系接口。
 - `ziwei_engine.py`：紫微确定性排盘与动态层。
 - `affinity_engine.py`：双档案合缘确定性证据计算。
 - `.xuanheng/state.sqlite3`：本地数据与缓存；目录被 Git 排除，不能提交用户资料。
-- `打开玄衡.command`：推荐本地入口，检测 4173 端口、启动服务并打开正确网址；终端需要保持运行。
+- `打开Luma.command`：推荐本地入口（兼容调用旧启动脚本），检测 4173 端口、启动服务并打开正确网址；终端需要保持运行。
 - `.openai/hosting.json` 对应的 Sites 工程仍为占位，不是当前可用产品。
 
 ## 数据与身份规则
@@ -49,3 +50,4 @@
 - 上游八字测试：11 项通过。
 - Python 编译、页面内联 JavaScript 解析和本地 HTTP 冒烟曾通过。
 - 每轮变更仍需重新运行与风险相称的验证，不能只引用旧结果。
+- 日光重构增加 `tests/daylight-smoke.cjs`：必须指向临时数据库服务并设置 `LUMA_ISOLATED_TEST=1`；覆盖三卡片交互、真实排盘/塔罗/紫微/合缘、历史侧栏、五档宽度、字体栈与顶栏坐标，不调用真实模型、不写入用户档案。
